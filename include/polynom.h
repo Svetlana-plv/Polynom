@@ -1,6 +1,6 @@
 #pragma once
 #include "list.h"
-#include "parser.h"
+#include "polynom_parser.h"
 
 const double EPS = 1e-10;
 
