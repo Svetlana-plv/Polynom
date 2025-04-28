@@ -10,7 +10,7 @@
 #include <QDrag>
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
-
+#include <QPushButton>
 
 
 class widgetPolynom : public QWidget {
@@ -18,7 +18,9 @@ class widgetPolynom : public QWidget {
 private:
     QLabel* handle;
     QLineEdit* lineEdit;
+    QPushButton* changeButton;
     QPoint startPos; // <= запомним начальное положение мышки
+    QPropertyAnimation* lineEditAnimation;
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;

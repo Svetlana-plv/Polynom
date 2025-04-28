@@ -17,6 +17,7 @@ class MainWindow : public QMainWindow {
 public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
+    void addWidgetAnimation(QWidget* widget);
 
 private:
     Ui::MainWindow* ui;

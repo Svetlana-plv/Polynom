@@ -14,6 +14,7 @@
 #include <QDrag>
 #include <QMimeData>
 
+
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
 
@@ -38,8 +39,39 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_clicked()
 {
-    auto flow = static_cast<FlowLayout*>(ui->scrollArea->widget()->layout());
+    //auto flow = static_cast<FlowLayout*>(ui->scrollArea->widget()->layout());
     auto widgetP = new widgetPolynom();
-    flow->addWidget(widgetP);
+    addWidgetAnimation(widgetP);
 }
 
+void MainWindow::addWidgetAnimation(QWidget* widget)
+{
+    auto widgetP = qobject_cast<widgetPolynom*>(widget);
+    if (!widgetP) return;
+
+    auto flow = static_cast<FlowLayout*>(ui->scrollArea->widget()->layout());
+    if (!flow) return;
+
+
+    flow->addWidget(widgetP);
+
+
+    auto anim = new QPropertyAnimation(widgetP, "maximumWidth", this);
+    anim->setDuration(1000);
+    anim->setStartValue(0);
+    anim->setEndValue(400);
+    anim->setEasingCurve(QEasingCurve::OutCubic); // Пружинистый эффект
+
+    auto* effect = new QGraphicsOpacityEffect(widgetP);
+    widgetP->setGraphicsEffect(effect);
+    QPropertyAnimation* fadeAnim = new QPropertyAnimation(effect, "opacity");
+    fadeAnim->setDuration(300);
+    fadeAnim->setStartValue(0.0);
+    fadeAnim->setEndValue(1.0);
+    fadeAnim->setEasingCurve(QEasingCurve::OutCubic);
+
+
+
+    fadeAnim->start(QAbstractAnimation::DeleteWhenStopped);
+    anim->start(QAbstractAnimation::DeleteWhenStopped);
+}

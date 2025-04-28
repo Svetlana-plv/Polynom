@@ -69,6 +69,7 @@ void ContainerPolynom::dragMoveEvent(QDragMoveEvent* event)
         }
         else if (insertIndex == -1)
             insertIndex = count;  // Если не нашли — вставить в конец
+
         update();  // Перерисовываем подсветку
     }
 }
@@ -84,15 +85,14 @@ void ContainerPolynom::dropEvent(QDropEvent* event)
         if (!w) return;
        
         w->setParent(this);
-        flow->insertWidget(insertIndex, w);  // Вставляем в новое место
+        insertAnimated(w, insertIndex);  // Вставляем в новое место
         w->show();
 
-        flow->invalidate();
 
         event->acceptProposedAction();
 
+        animateLayoutUpdate();
         insertIndex = -1;  // Сбрасываем
-        update();
     }
 }
 
@@ -135,3 +135,70 @@ void ContainerPolynom::paintEvent(QPaintEvent* event)
     }
 }
 
+void ContainerPolynom::animateLayoutUpdate()
+{
+    auto flow = static_cast<FlowLayout*>(layout());
+    if (!flow)
+        return;
+
+    QVector<QPropertyAnimation*> animations;
+
+
+    QMap<QWidget*, QRect> oldGeometries;
+    for (int i = 0; i < flow->count(); ++i) {
+        QWidget* widget = flow->itemAt(i)->widget();
+        if (widget) {
+            oldGeometries[widget] = widget->geometry();
+        }
+    }
+
+    flow->invalidate();
+    flow->update();
+    flow->activate(); 
+
+    for (int i = 0; i < flow->count(); ++i) {
+        QWidget* widget = flow->itemAt(i)->widget();
+        if (widget && oldGeometries.contains(widget)) {
+            QRect startRect = oldGeometries[widget];
+            QRect endRect = widget->geometry();
+
+            auto anim = new QPropertyAnimation(widget, "geometry", this);
+            anim->setDuration(250); 
+            anim->setStartValue(startRect);
+            anim->setEndValue(endRect);
+            anim->setEasingCurve(QEasingCurve::OutCubic); // плавная кривая
+
+            anim->start(QAbstractAnimation::DeleteWhenStopped);
+            animations.append(anim);
+        }
+    }
+}
+
+void ContainerPolynom::insertAnimated(widgetPolynom* widget, int index)
+{
+    auto flow = static_cast<FlowLayout*>(layout());
+    if (!flow) return;
+
+    flow->insertWidget(index, widget);
+
+
+    auto anim = new QPropertyAnimation(widget, "maximumWidth", this);
+    anim->setDuration(600);
+    anim->setStartValue(0);
+    anim->setEndValue(400);
+    anim->setEasingCurve(QEasingCurve::OutCubic); // Пружинистый эффект
+
+
+    auto* effect = new QGraphicsOpacityEffect(widget);
+    widget->setGraphicsEffect(effect);
+    QPropertyAnimation* fadeAnim = new QPropertyAnimation(effect, "opacity");
+    fadeAnim->setDuration(600);
+    fadeAnim->setStartValue(0.0);
+    fadeAnim->setEndValue(1.0);
+    fadeAnim->setEasingCurve(QEasingCurve::OutCubic);
+
+
+    fadeAnim->start(QAbstractAnimation::DeleteWhenStopped);
+    anim->start(QAbstractAnimation::DeleteWhenStopped);
+
+}

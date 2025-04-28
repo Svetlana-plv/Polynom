@@ -9,6 +9,8 @@ class ContainerPolynom : public QWidget {
     Q_OBJECT
 public:
     explicit ContainerPolynom(QWidget* parent = nullptr);
+    void animateLayoutUpdate();
+    void insertAnimated(widgetPolynom* widget, int index);
 
 protected:
     void dragEnterEvent(QDragEnterEvent* event) override;
@@ -17,6 +19,7 @@ protected:
     void dropEvent(QDropEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
     void leaveEvent(QEvent* event) override;
+
 private:
     int insertIndex = -1;
 };
