@@ -74,7 +74,9 @@ void listPolynom::dropEvent(QDropEvent* event)
 
         bool flag = false;
         for (int i = 0; i < count; ++i) {
-            if (w->getLineEdit()->text() == qobject_cast<widgetPolynom*>(Llayout->itemAt(i)->widget())->getLineEdit()->text()) {
+            if (w->getLineEdit()->text() == qobject_cast<widgetPolynom*>(Llayout->itemAt(i)->widget())->getLineEdit()->text() &&
+                w->getColor()->styleSheet() == qobject_cast<widgetPolynom*>(Llayout->itemAt(i)->widget())->getColor()->styleSheet()
+                ) {
                 flag = true;
                 break;
             }

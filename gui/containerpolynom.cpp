@@ -50,7 +50,6 @@ void ContainerPolynom::dragMoveEvent(QDragMoveEvent* event)
             }
         }
 
-        // 2. Найти позицию в этой строке (по X)
         for (int i = 0; i < count; ++i) {
             QWidget* widget = flow->itemAt(i)->widget();
             if (!widget) continue;
@@ -181,11 +180,12 @@ void ContainerPolynom::insertAnimated(widgetPolynom* widget, int index)
 
     flow->insertWidget(index, widget);
 
+    int target = widget->maximumWidth();
 
     auto anim = new QPropertyAnimation(widget, "maximumWidth", this);
     anim->setDuration(600);
     anim->setStartValue(0);
-    anim->setEndValue(400);
+    anim->setEndValue(target);
     anim->setEasingCurve(QEasingCurve::OutCubic); // Пружинистый эффект
 
 

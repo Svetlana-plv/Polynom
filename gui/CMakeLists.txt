@@ -1,12 +1,9 @@
-
-
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 set(CMAKE_PREFIX_PATH "D:/QT/6.9.0/msvc2022_64/lib/cmake")
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
-
 
 add_executable(gui_translator
     main.cpp
@@ -23,6 +20,7 @@ add_executable(gui_translator
     listlayout.h
     listlayout.cpp
     mainwindow.ui
+    resources.qrc
 )
 
 target_link_libraries(gui_translator

@@ -19,15 +19,20 @@ private:
     QLabel* handle;
     QLineEdit* lineEdit;
     QPushButton* changeButton;
-    QPoint startPos; // <= запомним начальное положение мышки
+    QFrame* color;
+    QPoint startPos; 
     QPropertyAnimation* lineEditAnimation;
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
+    void enterEvent(QEnterEvent* event) override;
+    void leaveEvent(QEvent* event) override;
 
 public:
     QDrag* drag;
     void fadeOutAndHide(int duration = 300);
     explicit widgetPolynom(QWidget* parent = nullptr);
     QLineEdit* getLineEdit() const;
+    QFrame* getColor() const;
+    void fadeOutAndDelete(int duration);
 };

@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QLabel>
+#include <QStyleFactory>
 #include "mainwindow.h"
 
 int main(int argc, char* argv[]) {
@@ -8,5 +9,6 @@ int main(int argc, char* argv[]) {
     MainWindow w;
     w.show();
 
+    app.setStyle(QStyleFactory::create("Motif"));
     return app.exec();
 }

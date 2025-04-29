@@ -39,20 +39,17 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_clicked()
 {
-    //auto flow = static_cast<FlowLayout*>(ui->scrollArea->widget()->layout());
+    auto flow = static_cast<FlowLayout*>(ui->scrollArea->widget()->layout());
     auto widgetP = new widgetPolynom();
-    addWidgetAnimation(widgetP);
+    addWidgetAnimation(widgetP, flow);
 }
 
-void MainWindow::addWidgetAnimation(QWidget* widget)
+void MainWindow::addWidgetAnimation(QWidget* widget, FlowLayout* flow)
 {
     auto widgetP = qobject_cast<widgetPolynom*>(widget);
     if (!widgetP) return;
 
-    auto flow = static_cast<FlowLayout*>(ui->scrollArea->widget()->layout());
     if (!flow) return;
-
-
     flow->addWidget(widgetP);
 
 

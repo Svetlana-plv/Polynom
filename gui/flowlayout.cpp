@@ -48,9 +48,36 @@ QSize FlowLayout::sizeHint() const
 QSize FlowLayout::minimumSize() const
 {
     QSize size;
-    for (auto item : itemList)
-        size = size.expandedTo(item->minimumSize());
+    int lineWidth = 0;
+    int lineHeight = 0;
+
     const QMargins margins = contentsMargins();
+    int effectiveWidth = parentWidget()->parentWidget()->width(); 
+
+    int x = 100;
+    for (auto item : itemList) {
+        QSize itemSize = item->sizeHint();
+        int spaceX = horizontalSpacing();
+        int spaceY = verticalSpacing();
+        if (spaceX == -1) spaceX = 0;
+        if (spaceY == -1) spaceY = 0;
+
+        if (x + itemSize.width() > effectiveWidth) {
+            size.setWidth(qMax(size.width(), lineWidth));
+            size.setHeight(size.height() + lineHeight + spaceY);
+            x = 100;
+            lineWidth = 0;
+            lineHeight = 0;
+        }
+
+        x += itemSize.width() + spaceX;
+        lineWidth += itemSize.width() + spaceX;
+        lineHeight = qMax(lineHeight, itemSize.height());
+    }
+
+    size.setWidth(qMax(size.width(), lineWidth));
+    size.setHeight(size.height() + lineHeight);
+
     size += QSize(margins.left() + margins.right(), margins.top() + margins.bottom());
     return size;
 }

@@ -1,4 +1,5 @@
  #pragma once
+#include "flowlayout.h"
 
 #include <QMainWindow>
 #include <QWidget>
@@ -17,7 +18,7 @@ class MainWindow : public QMainWindow {
 public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
-    void addWidgetAnimation(QWidget* widget);
+    void addWidgetAnimation(QWidget* widget, FlowLayout* flow);
 
 private:
     Ui::MainWindow* ui;
