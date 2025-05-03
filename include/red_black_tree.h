@@ -24,10 +24,11 @@ private:
     };
 
     Node* root;
-    size_t item_count;
+    size_t item_count; // current size of tree
 
 public:
 
+    // Iterator
     class Iterator {
     private:
         Node* current;
@@ -54,11 +55,12 @@ private:
     Node* find(const Key& key, Node* current) const;
     Node* minimum(Node* node) const;
     Node* maximum(Node* node) const;
-    Node* predecessor(Node* node) const;
-    Node* successor(Node* node) const;
+    Node* predecessor(Node* node) const; // previous elsment
+    Node* successor(Node* node) const; // next element
     void clear(Node* node);
 };
 
+// Private find
 template <typename Key, typename Value>
 typename RBTree<Key, Value>::Node* RBTree<Key, Value>::find(const Key& key, Node* current) const {
     while (current != nullptr) {
@@ -91,6 +93,7 @@ typename RBTree<Key, Value>::Node* RBTree<Key, Value>::maximum(Node* node) const
     return node;
 }
 
+// Previous element
 template <typename Key, typename Value>
 typename RBTree<Key, Value>::Node* RBTree<Key, Value>::predecessor(Node* node) const {
     if (node->left)
@@ -103,6 +106,7 @@ typename RBTree<Key, Value>::Node* RBTree<Key, Value>::predecessor(Node* node) c
     return parent_curr;
 }
 
+// Next element
 template <typename Key, typename Value>
 typename RBTree<Key, Value>::Node* RBTree<Key, Value>::successor(Node* node) const {
     if (node->right)
@@ -115,6 +119,7 @@ typename RBTree<Key, Value>::Node* RBTree<Key, Value>::successor(Node* node) con
     return parent_curr;
 }
 
+//Public clear
 template <typename Key, typename Value>
 void RBTree<Key, Value>::clear() {
     clear(root);
@@ -122,6 +127,7 @@ void RBTree<Key, Value>::clear() {
     item_count = 0;
 }
 
+//Private clear
 template <typename Key, typename Value>
 void RBTree<Key, Value>::clear(Node* node) {
     if (node != nullptr) {
