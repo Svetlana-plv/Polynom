@@ -22,4 +22,5 @@ protected:
 
 private:
     int insertIndex = -1;
+
 };

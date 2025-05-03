@@ -1,6 +1,11 @@
 <RCC>
     <qresource prefix="/">
-        <file>icons/edit1.png</file>
-	    <file>icons/edit2.png</file>
-    </qresource>
+		
+		<file>icons/edit1.png</file>
+		<file>icons/grab.png</file>
+		<file>icons/edit2.png</file>
+		<file>icons/grabbing.png</file>
+		<file>icons/no-drop.png</file>
+		
+	</qresource>
 </RCC>

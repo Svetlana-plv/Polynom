@@ -1,6 +1,7 @@
 #include "widgetpolynom.h"
 #include "containerpolynom.h"
 
+
 #include <iostream>
 #include <QMessageBox>
 #include <QPushButton>
@@ -11,61 +12,53 @@
 #include <QDrag>
 #include <QMimeData>
 #include <QApplication>
-#include <Qpainter>
-#include <Qmenu>
-#include <Qstyle>
+#include <QPainter>
+#include <QMenu>
+#include <QStyle>
 #include <QStyleFactory>
+#include <QCursor>
+#include <QTimer>
+
 
 
 widgetPolynom::widgetPolynom(QWidget* parent) : QWidget(parent)
 {
-    drag = nullptr;
 
+    drag = nullptr;
     auto backGround = new QFrame(this);
-    backGround->setStyleSheet("background-color: #535353; border-radius: 4px;");
-    //backGround->setFixedHeight(40);
+    backGround->setStyleSheet("background-color: #2d2d2d; border-radius: 4px;");
     backGround->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     backGround->setContentsMargins(0, 0, 0, 0);
 
 
     handle = new QLabel(backGround);
+    handle->setContentsMargins(0, -1, 0, 1);
+    handle->setFixedHeight(18);
     handle->setText("<b>::</b>");
     handle->setFont(QFont("Arial", 13));
+    handle->setAttribute(Qt::WA_Hover, true);
     handle->installEventFilter(this);
-    handle->setContentsMargins(0, 0, 0, 1);
+    handle->adjustSize();
+
 
     color = new QFrame(backGround);
+    color->setContentsMargins(0, 0, 0, -1);
     color->setFixedWidth(7);
-    color->setFixedHeight(14);
+    color->setFixedHeight(16);
     color->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-    color->setStyleSheet("background-color: #2a2a2a; border-radius: 3px;");
+    color->setStyleSheet("background-color: #ececec; border-radius: 3px;");
 
 
     lineEdit = new QLineEdit(backGround);
+    lineEdit->setTextMargins(0, 2, 0, 0); 
     lineEdit->setFixedWidth(50);
-    lineEdit->setReadOnly(true);
+    lineEdit->setFont(QFont("Courier New", 12, QFont::Normal, false));
+    lineEdit->setReadOnly(false);
     lineEdit->installEventFilter(this);
-    //lineEdit->setStyleSheet("background-color: #303030; border-radius: 4px;");
-
-
-    changeButton = new QPushButton(backGround);
-    changeButton->setIcon(QIcon(":/icons/edit2.png"));
-    changeButton->setVisible(false);
-    //changeButton->setIcon(style()->standardIcon(QStyle::SP_FileDialogDetailedView));
-    changeButton->setIconSize(QSize(16, 16));
-    changeButton->setText("");
-    changeButton->setStyleSheet("border: none;");
-    changeButton->installEventFilter(this);
-
-    auto lineLayout = new QHBoxLayout(lineEdit);
-    lineLayout->setContentsMargins(0, 0, 0, 0);
-    lineLayout->addStretch();
-    lineLayout->addWidget(changeButton);
 
 
     auto backGrounglayout = new QHBoxLayout(backGround);
-    backGrounglayout->setContentsMargins(3, 0, 5, 0);
-    backGrounglayout->setSpacing(5);
+    backGrounglayout->setContentsMargins(0, 0, 5, 0);
     backGrounglayout->addWidget(color);
     backGrounglayout->addWidget(handle, 0, Qt::AlignCenter);
     backGrounglayout->addWidget(lineEdit, 0, Qt::AlignCenter);
@@ -79,13 +72,16 @@ widgetPolynom::widgetPolynom(QWidget* parent) : QWidget(parent)
     lineEditAnimation->setDuration(150);
     lineEditAnimation->setEasingCurve(QEasingCurve::OutCubic); 
 
+    //connect(lineEdit, &QLineEdit::hasFocus, this, [this]() {
+    //    this->parent()->parent();
+    //});
+
     //adding
     connect(lineEdit, &QLineEdit::textChanged, this, [this]() {
         QFontMetrics fm(lineEdit->font());
 
         int extra = this->width() - lineEdit->width();
-        int textWidth = fm.horizontalAdvance(lineEdit->text()) + 10;
-
+        int textWidth = fm.horizontalAdvance(lineEdit->text()) + 15;
         int target = extra + textWidth;
 
         if (this->maximumWidth() < target) {
@@ -99,6 +95,7 @@ widgetPolynom::widgetPolynom(QWidget* parent) : QWidget(parent)
         lineEditAnimation->start();
 
         this->updateGeometry();
+
         });
 
     connect(lineEdit, &QLineEdit::editingFinished, this, [this]() {
@@ -112,20 +109,82 @@ widgetPolynom::widgetPolynom(QWidget* parent) : QWidget(parent)
 bool widgetPolynom::eventFilter(QObject* obj, QEvent* event)
 {
     if (obj == handle) {
-        if (event->type() == QEvent::MouseButtonPress) {
+
+        if (event->type() == QEvent::Enter) {
+            handle->setStyleSheet("background-color: rgba(236, 236, 236, 0.12); border-radius: 3px;");
+            return true;  
+        }
+
+        else if (event->type() == QEvent::Leave) {
+            handle->setStyleSheet("background-color: #2d2d2d; border-radius: 3px;");
+        }
+
+        else if (event->type() == QEvent::MouseButtonPress) {
             QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
             if (mouseEvent->button() == Qt::LeftButton) {
-                startPos = mouseEvent->pos(); // запоминаем, где нажали мышь
+                startPos = mouseEvent->pos(); 
+            }
+            else if (mouseEvent->button() == Qt::RightButton) {
+                QMenu* menu = new QMenu(this);
+                
+                menu->setStyleSheet(menuStyle);
+                
+                QAction* action1 = menu->addAction("Edit text");
+                QAction* action2 = menu->addAction("Reset");
+                QAction* action4 = menu->addAction("Delete");
+
+                QMenu* colorMenu = menu->addMenu("Color");
+
+                colorMenu->setStyleSheet(menuStyle);
+
+                QList<QPair<QString, QColor>> colors = {
+                    {"Red", QColor("#FF1744")},
+                    {"Green", QColor("#C6FF00")},
+                    {"Blue", QColor("#2979FF")},
+                    {"Yellow", QColor("#FFEA00")},
+                    {"Pink", QColor("#FFD1DC")}
+                };
+
+                for (auto& pair : colors) {
+                    colorMenu->addAction(pair.first)->setData(pair.second);
+                }
+
+                connect(menu, &QMenu::triggered, this, [this, action1, action2, action4](QAction* act) {
+                    if (act == action1) {
+                        lineEdit->setReadOnly(false);
+                        lineEdit->setFocus();
+                    }
+                    else if (act == action2) {
+                        lineEdit->clear();
+                    }
+                    else if (act == action4) {
+                        this->fadeOutAndDelete(300);
+                    }
+                    });
+
+                connect(colorMenu, &QMenu::triggered, this, [this](QAction* act) {
+                    QColor c = act->data().value<QColor>();
+                    color->setStyleSheet(
+                        QString("background-color: %1; border-radius: 3px;")
+                        .arg(c.name())
+                    );
+                    });
+
+                menu->exec(handle->mapToGlobal(QPoint(0, handle->height())));
+                return true;
             }
         }
+        
         else if (event->type() == QEvent::MouseMove) {
             QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+
+
             if (!(mouseEvent->buttons() & Qt::LeftButton)) //маска
                 return false;
 
             if ((mouseEvent->pos() - startPos).manhattanLength() < QApplication::startDragDistance())
                 return false;
-            
+            handle->setStyleSheet("background-color: #2d2d2d; border-radius: 3px;");
             if (qobject_cast<ContainerPolynom*>(this->parentWidget())) {
                 this->fadeOutAndHide(90);
                
@@ -148,115 +207,64 @@ bool widgetPolynom::eventFilter(QObject* obj, QEvent* event)
                 painter.drawPixmap(0, 0, pixmap);
                 painter.end();
                 
+                drag->setDragCursor(QPixmap(":/icons/no-drop.png"), Qt::IgnoreAction);
+                drag->setDragCursor(QPixmap(":/icons/grabbing.png"), Qt::MoveAction);
                 drag->setPixmap(transparentPixmap);
-                drag->setHotSpot(mouseEvent->pos());
+                drag->setHotSpot(this->mapFromGlobal(handle->mapToGlobal(mouseEvent->pos())));
 
                 update();
                 qobject_cast<ContainerPolynom*>(this->parentWidget())->animateLayoutUpdate();
+                
+
                 drag->exec(Qt::MoveAction | Qt::CopyAction);
             }
             else {
                 widgetPolynom* tmp = new widgetPolynom();
                 tmp->lineEdit->setText(this->lineEdit->text());
                 tmp->color->setStyleSheet(this->color->styleSheet());
+                
                 QDrag* drag = new QDrag(tmp);
                 QMimeData* mimeData = new QMimeData;
 
                 mimeData->setData("application/x-polynom-widget", QByteArray::number(reinterpret_cast<quintptr>(tmp)));
                 drag->setMimeData(mimeData);
 
+                drag->setDragCursor(QPixmap(":/icons/no-drop.png"), Qt::IgnoreAction);
+                drag->setDragCursor(QPixmap(":/icons/grabbing.png"), Qt::MoveAction);
                 QPixmap pixmap(this->size());
                 pixmap.fill(Qt::transparent);
                 this->render(&pixmap);
                 drag->setPixmap(pixmap);
-                drag->setHotSpot(mouseEvent->pos());
+                drag->setHotSpot(this->mapFromGlobal(handle->mapToGlobal(mouseEvent->pos())));
 
-                update();
 
                 drag->exec(Qt::MoveAction | Qt::CopyAction);
+                update();
             }
 
+            //QApplication::restoreOverrideCursor();
             return true; // событие обработано
         }
+    
+
     }
 
     else if (obj == lineEdit) {
+
         if (event->type() == QEvent::MouseButtonDblClick) {
             lineEdit->setReadOnly(false);
             lineEdit->setFocus();
             lineEdit->selectAll();
             return true;
         }
-        else if (event->type() == QEvent::Enter) {
-            changeButton->setVisible(true);
-            return true;
+        else if (event->type() == QEvent::FocusIn) {
+            qDebug() << "focus";
+            emit requestConnect(this);
         }
-        else if (event->type() == QEvent::Leave) {
-            changeButton->setVisible(false);
-            return true;
-        }
-    }
-
-    else if (obj == changeButton) {
-        if (event->type() == QEvent::MouseButtonPress) {
-            QMenu* menu = new QMenu(this);
-
-            QAction* action1 = menu->addAction("Edit text");
-            QAction* action2 = menu->addAction("Reset");
-            QAction* action4 = menu->addAction("Delete");
-            QAction* action3 = menu->addAction("Color");
-
-            QMenu* colorMenu = new QMenu("Choose color", menu);
-            QList<QPair<QString, QColor>> colors = {
-                {"Red", QColor("#FF1744")},
-                {"Green", QColor("#C6FF00")},
-                {"Blue", QColor("#2979FF")},
-                {"Yellow", QColor("#FFEA00")},
-                {"Pink", QColor("#FFD1DC")}
-            };
-
-            for (auto& pair : colors) {
-                QAction* colorAction = colorMenu->addAction(pair.first);
-                colorAction->setData(pair.second);
-            }
-
-            connect(menu, &QMenu::hovered, this, [this, menu, action3, colorMenu](QAction* hoveredAction) {
-                if (hoveredAction == action3) {
-                    QRect actionRect = menu->actionGeometry(action3);
-                    QPoint menuPos = menu->mapToGlobal(actionRect.topRight());
-                    colorMenu->move(menuPos);
-                    colorMenu->show();
-                }
-                else {
-                    colorMenu->hide();
-                }
-                });
-
-            connect(colorMenu, &QMenu::triggered, this, [this, colorMenu, menu](QAction* selectedColorAction) {
-                if (selectedColorAction) {
-                    QColor chosenColor = selectedColorAction->data().value<QColor>();
-                    QString style = QString("background-color: %1; border-radius: 3px;").arg(chosenColor.name());
-                    color->setStyleSheet(style);
-                    colorMenu->close();
-                    menu->close();
-                }
-                });
-
-            QAction* selectedAction = menu->exec(changeButton->mapToGlobal(QPoint(0, changeButton->height())));
-
-            if (selectedAction == action1) {
-                lineEdit->setReadOnly(false);
-                lineEdit->setFocus();
-            }
-            else if (selectedAction == action2) {
-                lineEdit->setText("");
-            }
-            else if (selectedAction == action4) {
-                this->fadeOutAndDelete(300);
-            }
-
-            colorMenu->hide();
-            return true;
+        else if (event->type() == QEvent::FocusOut) {
+            qDebug() << "unfocus";
+            lineEdit->setReadOnly(true);
+            emit unrequestConnect();
         }
     }
 
@@ -288,6 +296,7 @@ void widgetPolynom::fadeOutAndHide(int duration)
 
 void widgetPolynom::fadeOutAndDelete(int duration)
 {
+    
     auto* effect = new QGraphicsOpacityEffect(this);
     this->setGraphicsEffect(effect);
 
@@ -316,18 +325,6 @@ void widgetPolynom::fadeOutAndDelete(int duration)
     anim->start(QAbstractAnimation::DeleteWhenStopped); 
 }
 
-void widgetPolynom::enterEvent(QEnterEvent* event)
-{
-    QWidget::enterEvent(event);
-    changeButton->setVisible(true);
-}
-
-void widgetPolynom::leaveEvent(QEvent* event)
-{
-    QWidget::leaveEvent(event);
-    changeButton->setVisible(false);
-}
-
 QLineEdit* widgetPolynom::getLineEdit() const
 {
     return lineEdit;
@@ -336,4 +333,24 @@ QLineEdit* widgetPolynom::getLineEdit() const
 QFrame* widgetPolynom::getColor() const
 {
     return color;
+}
+
+void widgetPolynom::setRedColor() {
+    color->setStyleSheet(QString("background-color: #FF1744; border-radius: 3px; "));
+}
+
+void widgetPolynom::setBlueColor() {
+    color->setStyleSheet(QString("background-color: #2979FF; border-radius: 3px; "));
+}
+
+void widgetPolynom::setGreenColor() {
+    color->setStyleSheet(QString("background-color: #C6FF00; border-radius: 3px; "));
+}
+
+void widgetPolynom::setYellowColor() {
+    color->setStyleSheet(QString("background-color: #FFEA00; border-radius: 3px;"));
+}
+
+void widgetPolynom::setPinkColor() {
+    color->setStyleSheet(QString("background-color: #FFD1DC; border-radius: 3px;"));
 }

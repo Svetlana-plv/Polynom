@@ -3,21 +3,25 @@
 #include <QWidget>
 #include <iostream>
 #include <QPainter>
+#include <QTimer>
 #include "widgetpolynom.h" // Подключаем виджет, который будем перетаскивать
 
 ContainerPolynom::ContainerPolynom(QWidget* parent)
     : QWidget(parent)
 {
+
+    //this->setStyleSheet("background-color: #737373; border: 2px solid #D9D9D9; border - radius: 5px;");
     setAcceptDrops(true);
     setLayout(new FlowLayout(this));
+
+    //this->setStyleSheet("background-color: #252525; border-radius: 3px;");
 }
 
 void ContainerPolynom::dragEnterEvent(QDragEnterEvent* event)
 {
     // Проверяем, что перетаскиваемые данные имеют нужный формат
     if (event->mimeData()->hasFormat("application/x-polynom-widget")) {
-        //event->setDropAction(Qt::MoveAction);
-        event->acceptProposedAction();  // Разрешаем перетаскивание
+        event->acceptProposedAction(); 
     }
 
 }
@@ -162,7 +166,7 @@ void ContainerPolynom::animateLayoutUpdate()
             QRect endRect = widget->geometry();
 
             auto anim = new QPropertyAnimation(widget, "geometry", this);
-            anim->setDuration(250); 
+            anim->setDuration(150);
             anim->setStartValue(startRect);
             anim->setEndValue(endRect);
             anim->setEasingCurve(QEasingCurve::OutCubic); // плавная кривая

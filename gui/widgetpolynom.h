@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <QWidget>
 #include <QLabel>
 #include <QLineEdit>
@@ -18,21 +17,51 @@ class widgetPolynom : public QWidget {
 private:
     QLabel* handle;
     QLineEdit* lineEdit;
-    QPushButton* changeButton;
     QFrame* color;
     QPoint startPos; 
     QPropertyAnimation* lineEditAnimation;
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
-    void enterEvent(QEnterEvent* event) override;
-    void leaveEvent(QEvent* event) override;
 
 public:
+    QTimer* debounceTimer = nullptr;
     QDrag* drag;
     void fadeOutAndHide(int duration = 300);
     explicit widgetPolynom(QWidget* parent = nullptr);
+    //delete
     QLineEdit* getLineEdit() const;
     QFrame* getColor() const;
     void fadeOutAndDelete(int duration);
+
+    QString menuStyle = R"(
+    QMenu {
+        background-color: #2d2d2d;      
+        border: 1px solid #555555;    
+        border-radius: 6px;             
+        padding: 4px;                
+    }
+    QMenu::item {
+        padding: 6px;     
+        background-color: transparent;  
+    }
+    QMenu::item:selected {
+        background-color: #444444;
+    }
+    QMenu::separator {
+        height: 1px;
+        background: #555555;
+        margin: 5px 0;
+    }
+)";
+
+    void setRedColor();
+    void setGreenColor();
+    void setBlueColor();
+    void setYellowColor();
+    void setPinkColor();
+
+signals:
+    void requestConnect(widgetPolynom* sender);
+    void unrequestConnect();
 };

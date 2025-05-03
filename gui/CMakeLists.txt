@@ -7,19 +7,37 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 
 add_executable(gui_translator
     main.cpp
+
     mainwindow.cpp
     mainwindow.h
+    mainwindow.ui
+
+    selectwidget.cpp
+    selectwidget.h
+    selectwidget.ui
+
+    calculatorwidget.cpp
+    calculatorwidget.h
+    calculatorwidget.ui
+
     flowlayout.h
     flowlayout.cpp
+
     widgetpolynom.h
     widgetpolynom.cpp
+
     containerpolynom.h
     containerpolynom.cpp
+
     listpolynom.h
     listpolynom.cpp
+
     listlayout.h
     listlayout.cpp
-    mainwindow.ui
+
+    tabwidget.h
+    tabwidget.cpp
+
     resources.qrc
 )
 
