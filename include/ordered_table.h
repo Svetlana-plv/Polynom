@@ -107,6 +107,24 @@ public:
 		}
 	};
 
+	class ConstIterator {
+	public:
+		const std::pair<TKey, TValue>* ptr;
+		ConstIterator(const std::pair<TKey, TValue>* p = nullptr) : ptr(p) {}
+
+		const std::pair<TKey, TValue>& operator*() const { return *ptr; }
+		const std::pair<TKey, TValue>* operator->() const { return ptr; }
+
+		ConstIterator& operator++() { ++ptr; return *this; }
+		ConstIterator  operator++(int) { ConstIterator t = *this; ++*this; return t; }
+		ConstIterator& operator--() { --ptr; return *this; }
+		ConstIterator  operator--(int) { ConstIterator t = *this; --*this; return t; }
+
+		bool operator==(const ConstIterator& o) const { return ptr == o.ptr; }
+		bool operator!=(const ConstIterator& o) const { return ptr != o.ptr; }
+	};
+
+
 	OrderedTable() = default;
 
 	Iterator insert(const TKey& key, const TValue& value) {
@@ -158,9 +176,17 @@ public:
 		return Iterator(data.data());
 	}
 
-	Iterator end() {
+    Iterator end() {
 		if (data.empty()) return Iterator(nullptr);
 		return Iterator(data.data() + data.size());
+	}
+
+	ConstIterator begin() const {
+		return data.empty() ? ConstIterator(nullptr) : ConstIterator(data.data());
+	}
+
+	ConstIterator end() const {
+		return data.empty() ? ConstIterator(nullptr) : ConstIterator(data.data() + data.size());
 	}
 
 	int size() const {

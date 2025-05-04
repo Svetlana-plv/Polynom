@@ -26,6 +26,8 @@ public:
 		pair<TKey, TValue>* p; //poinrer
 		Iterator(pair<TKey, TValue>* pair) : p(pair) {}
 
+		const TValue& value() { return this->ptr.second; }
+
 		Iterator& operator++() {
 			p++;
 			return *this;

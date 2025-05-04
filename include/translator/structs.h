@@ -12,6 +12,12 @@
 
 //std::unordered_set<std::string> con = { "pi", "e" };
 //std::unordered_set<std::string> func = { "sin", "cos", "exp", "ln" };
+enum class containerType {
+    ORDER_TABLE,
+    UNORDER_TABLE,
+    AVLTREE,
+    CHAINED_HASHTABLE
+};
 
 enum class tokenType {
     VARIABLE, // переменная

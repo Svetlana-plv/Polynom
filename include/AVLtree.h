@@ -154,6 +154,7 @@ public:
 		Iterator(Node* root) {
 			leftSheet(root);
 		}
+		const Tvalue& value() { return this->ptr.second; }
 
 		Iterator& operator++() {
 			Node* node = sNodes.top()->rChild;

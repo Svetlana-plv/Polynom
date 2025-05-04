@@ -1,9 +1,15 @@
 #pragma once
 #include "list.h"
+#include "ordered_table.h"
+#include "unordered_table.h"
+#include "AVLtree.h"
+#include "chained_hashtable.h"
 #include "polynom_parser.h"
+#include "structs.h"
+
+#include <variant>
 
 const double EPS = 1e-10;
-
 
 class Polynom;
 
@@ -56,13 +62,21 @@ public:
 class Polynom {
 private: 
 
-	List<Monom> polynom;
+	using OrderedC = OrderedTable<Monom, double>;
+	using UnordC = UnorderedTable<Monom, double>;
+	using AVLC = AVLTree<Monom, double>;
+	using HashC = HashTable<Monom, double>;
+
+	using VariantC = std::variant<OrderedC>;
+
+	VariantC container;
 
 public:
 
 	Polynom();
-	Polynom(const Monom& m);
-	Polynom(const std::string str);
+	Polynom(containerType type);
+	Polynom(const Monom& m, containerType type);
+	Polynom(const std::string str, containerType type);
 
 	bool operator==(const Polynom& p)const;
 	bool operator!=(const Polynom& p)const;
@@ -84,8 +98,31 @@ public:
 	void parse_string(std::string str);
 
 	void add_monom(const Monom& m);
-	void add_monom_after(const Monom& m, List<Monom>::Iterator it);
+	//void add_monom_after(const Monom& m, List<Monom>::Iterator it);
 	void erase_zero();
 	
-	~Polynom() { polynom.clear(); }
+	//~Polynom() { polynom.clear(); }
+
+private:
+	containerType type;
+
+	void setType(containerType type) {
+		this->type = type;
+		switch (type) {
+		case containerType::ORDER_TABLE:
+			container = OrderedC{};
+			break;
+		case containerType::UNORDER_TABLE:
+			//container = UnordC{};
+			break;
+		case containerType::AVLTREE:
+			//container = AVLC{};
+			break;
+		case containerType::CHAINED_HASHTABLE:
+			//container = HashC{};
+			break;
+		default:
+			throw std::invalid_argument("Unknown container type");
+		}
+	}
 };

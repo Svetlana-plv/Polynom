@@ -67,7 +67,7 @@ Monom Monom::operator*(const Monom& m)const {
 	return tmp;
 }
 
-Monom Monom::operator*(double c)const {
+Monom Monom::operator*(double c) const {
 	Monom tmp = *this;
 	tmp.coef = this->coef * c;
 	return tmp;

@@ -98,6 +98,8 @@ public:
         std::pair<Key, Value>& operator*() { return *chain_it; }
         std::pair<Key, Value>* operator->() { return &(*chain_it); }
 
+        const Value& value() { return this->ptr.second; }
+
         Iterator& operator++() {
             ++chain_it;
             move_to_next();
@@ -124,6 +126,10 @@ public:
 
         bool operator!=(const Iterator& other) const {
             return !(*this == other);
+        }
+
+        bool operator <=(const Iterator& other) const {
+            return table_it <= other.table_it;
         }
     };
 
@@ -210,4 +216,5 @@ public:
 
     size_t size() const { return item_count; }
     size_t table_size() const { return table.size(); }
+    bool empty() { return table.empty(); }
 };

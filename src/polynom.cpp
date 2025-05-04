@@ -1,32 +1,59 @@
 #include"polynom.h"
 
-Polynom::Polynom() {
-	this->polynom.insert_front(Monom());
+Polynom::Polynom()
+	: type(containerType::ORDER_TABLE)
+{
+	setType(type);
+
+	visit([&](auto& ctr) {
+		ctr.insert(Monom(), 0.0);
+		}, container);
 }
 
-Polynom::Polynom(const Monom& m) {
-	this->polynom.insert_front(m);
-	this->polynom.insert_front(Monom());
+Polynom::Polynom(containerType type) {
+	setType(type);
+
+	visit([&](auto& ctr) {
+		ctr.insert(Monom(), 0.0);
+	}, container);
 }
 
-Polynom::Polynom(const std::string str) {
+Polynom::Polynom(const Monom& m, containerType type) {
+	setType(type);
+	visit([&](auto& ctr) {
+		ctr.insert(m, m.get_coef());
+		ctr.insert(Monom(), 0.0);
+	}, container);
+}
+
+Polynom::Polynom(const std::string str, containerType type) {
+	setType(type);
 	(*this).parse_string(str);
 }
 
-bool Polynom::operator==(const Polynom& p)const {
+bool Polynom::operator==(const Polynom& p) const {
+	return visit([&](const auto& ctr1) -> bool{
 
-	List<Monom>::Iterator it1 = this->polynom.begin();
-	List<Monom>::Iterator it2 = p.polynom.begin();
+		using T = decay_t<decltype(ctr1)>;
+		if(!holds_alternative<T>(p.container)) return false;
+		const auto& ctr2 = get<T>(p.container);
 
-	while (it1 != this->polynom.end() && it2 != this->polynom.end()) {
-		if (it1.value() != it2.value()) {
-			return false;
+		if (ctr1.size() != ctr2.size()) return false;
+
+		auto it1 = ctr1.begin();
+		auto it2 = ctr2.begin();
+
+		while (it1 != ctr1.end() && it2 != ctr2.end()) {
+			if (it1->first != it2->first || std::abs(it1->second - it2->second) > EPS) {
+				return false;
+			}
+			++it1;
+			++it2;
 		}
-		it1++;
-		it2++;
-	}
-	if (it1 == this->polynom.end() && it2 == this->polynom.end()) return true;
-	return false;
+
+		if (it1 == ctr1.end() && it2 == ctr2.end()) return true;
+		return false;
+	}, container);
 }
 
 bool Polynom::operator!=(const Polynom& p)const {
@@ -63,75 +90,71 @@ Polynom Polynom::operator-(const Monom& m)const {
 
 Polynom Polynom::operator*(const Monom& m)const {
 
-	Polynom tmp;
+	Polynom tmp(this->type);
 
 	if (m == Monom()) return tmp;
 
-	List<Monom>::Iterator it = this->polynom.begin();
-	it++; // because first monom is empty
-
-	while (it != this->polynom.end()) {
-		tmp.add_monom(it.value() * m);
-		it++;
-	}
+	visit([&](const auto& ctr) {
+		auto it = ctr.begin();
+		while (it != ctr.end()) {
+			if (it->first == Monom()) continue; 
+			tmp.add_monom(it->first * m);
+			++it;
+		}
+	}, container);
 	
 	return tmp;
 }
 
 Polynom Polynom::operator+(const Polynom& p)const {
 
-	Polynom tmp;
+	Polynom tmp(this->type);
 
-	List<Monom>::Iterator it1 = this->polynom.begin();
-	List<Monom>::Iterator it2 = p.polynom.begin();
-	List<Monom>::Iterator it = tmp.polynom.begin();
+	visit([&](const auto& ctr1) {
+		using T = decay_t<decltype(ctr1)>;
 
-	while (it1 != polynom.end() && it2 != polynom.end()) {
-		if (it1.value() < it2.value()) {
-			tmp.add_monom_after(it1.value(), it);
-			it1++;
-			it++;
-		}
-		else if (it1.value() > it2.value()) {
-			tmp.add_monom_after(it2.value(), it);
-			it2++;
-			it++;
-		}
-		else {
-			if (abs(it1.value().get_coef() + it2.value().get_coef()) > EPS) {
-				tmp.add_monom_after(it1.value() + it2.value(), it);
-				it++;
+		if (!holds_alternative<T>(p.container)) return;
+
+		const auto& ctr2 = get<T>(p.container);
+		auto& tmp_ctr = get<T>(tmp.container);
+
+		auto it1 = ctr1.begin();
+		auto it2 = ctr2.begin();
+
+
+		while (it1 != ctr1.end() && it2 != ctr2.end()) {
+			if (it1->first < it2->first) {
+				tmp_ctr.insert(it1->first, it1->second);
+				++it1;
 			}
-			it1++;
-			it2++;
+			else if (it1->first > it2->first) {
+				tmp_ctr.insert(it2->first, it2->second);
+				++it2;
+			}
+			else {
+				double sum_coef = it1->second + it2->second;
+				if (abs(it1->second + it2->second) > EPS) {
+					tmp_ctr.insert(it1->first, sum_coef);
+				}
+				++it1;
+				++it2;
+			}
 		}
-	}
 
-	// Define polinom that has the remaining monoms
-	bool flag = true;
-	if (it2 != polynom.end()) {
-		flag = false;
-	}
-
-	// Add remaining monoms from this polinom
-	if (flag) {
-		while (it1 != polynom.end()) {
-			tmp.add_monom_after(it1.value(), it);
-			it1++;
-			it++;
+		while (it1 != ctr1.end()) {
+			tmp_ctr.insert(it1->first, it1->second);
+			++it1;
 		}
-	}
 
-	// Add remaining monoms from other polinom
-	else {
-		while (it2 != polynom.end()) {
-			tmp.add_monom_after(it2.value(), it);
-			it2++;
-			it++;
+		while (it2 != ctr2.end()) {
+			tmp_ctr.insert(it2->first, it2->second);
+			++it2;
 		}
-	}
+
+	}, container);
 
 	return tmp;
+
 }
 
 Polynom Polynom::operator-(const Polynom& p)const {
@@ -139,17 +162,29 @@ Polynom Polynom::operator-(const Polynom& p)const {
 	return (*this) + p * (-1);
 }
 
-Polynom Polynom::operator*(const Polynom& p)const {
-	Polynom tmp;
+Polynom Polynom::operator*(const Polynom& p) const {
+	Polynom tmp(this->type);
 
 	if ((*this) == tmp || p == tmp) return tmp;
 
-	List<Monom>::Iterator it = this->polynom.begin();
-	it++; // because first monom is empty
+	std::visit([&](const auto& ctr1) {
+		using T = std::decay_t<decltype(ctr1)>;
 
-	for (; it != this->polynom.end(); it++) {
-		tmp = tmp + p * it.value();
-	}
+		if (!std::holds_alternative<T>(p.container)) return;
+
+		const auto& ctr2 = std::get<T>(p.container);
+
+		std::visit([&](auto& tmp_ctr) {
+			for (const auto& [monom1, coef1] : ctr1) {
+				for (const auto& [monom2, coef2] : ctr2) {
+					Monom product_monom = monom1 * monom2;
+					double product_coef = coef1 * coef2;
+					tmp_ctr.insert(product_monom, product_coef);
+				}
+			}
+		}, tmp.container);
+
+	}, container);
 
 	return tmp;
 }
@@ -167,76 +202,95 @@ void Polynom::parse_string(std::string str) {
 }
 
 double Polynom::point(double x, double y, double z) {
-	double result = 0;
-	for (List<Monom>::Iterator it = polynom.begin(); it != polynom.end(); it++) {
-		result += it->value.get_coef() * pow(x, it->value.deg_x()) * pow(y, it->value.deg_y()) * pow(z, it->value.deg_z());
-	}
+	double result = 0.0;
+
+	std::visit([&](auto const& ctr) {
+
+		for (auto it = ctr.begin(); it != ctr.end(); ++it) {
+			const Monom& m = it->first;
+			double coef = it->second;
+
+			result += coef
+				* pow(x, m.deg_x())
+				* pow(y, m.deg_y())
+				* pow(z, m.deg_z());
+		}
+		}, container);
+
 	return result;
 }
 
 void Polynom::print() {
-	for (List<Monom>::Iterator it = polynom.begin(); it != polynom.end(); it++) {
-		it.value().print();
+	visit([&](auto& ctr) {
+		for (auto it = ctr.begin(); it != ctr.end(); ++it) {
+			it->first.print();
+			std::cout << std::endl;
+		}
 		std::cout << std::endl;
-	}
-	std::cout << std::endl;
+		}, container);
 }
 
 void Polynom::add_monom(const Monom& m) {
-	if (polynom.empty()) {
-		polynom.insert_front(m);
-		return;
-	}
-	List<Monom>::Iterator it = polynom.begin();
-	List<Monom>::Iterator it1 = it;
-	while (it1 != polynom.end() && it1.value() <= m) {
-		it = it1;
-		it1++;
-	}
-	if (it.value().get_deg() == m.get_deg()) {
-		if (abs(it.value().get_coef() + m.get_coef()) > EPS) {
-			this->polynom.set_value(it.value() + m, it);
+	visit([&](auto &ctr) {
+		if (ctr.empty()) {
+			ctr.insert(m, m.get_coef());
+			return;
 		}
-	}
-	else {
-		if(it==it1) this->polynom.insert_front(m);
-		else this->polynom.insert_after(m, it);
-	}
 
+		auto it = ctr.begin();
+		auto it1 = it;
+		while (it1 != ctr.end() && it1->first.get_deg() <= m.get_deg()) {
+			it = it1;
+			++it1;
+		}
+
+		if (it->first.get_deg() == m.get_deg()) {
+			if (abs(it->first.get_coef() + m.get_coef()) > EPS) {
+				it->second = it->second + m.get_coef();
+			}
+		}
+
+		else {
+			if(it == it1) ctr.insert(m, m.get_coef());
+			else ctr.insert(m, m.get_coef());
+		}
+
+	}, container);
 }
 
-void Polynom::add_monom_after(const Monom& m, List<Monom>::Iterator it) {
-	if (polynom.empty()) {
-		polynom.insert_front(m);
-		return;
-	}
-	if (it.value().get_deg() == m.get_deg()) {
-		if (abs(it.value().get_coef() + m.get_coef()) > EPS)
-			it.value() += m;
-	}
-	else {
-		this->polynom.insert_after(m, it);
-	}
-
-	//(*this).erase_zero();
-}
+//void Polynom::add_monom_after(const Monom& m, List<Monom>::Iterator it) {
+//	if (polynom.empty()) {
+//		polynom.insert_front(m);
+//		return;
+//	}
+//	if (it.value().get_deg() == m.get_deg()) {
+//		if (abs(it.value().get_coef() + m.get_coef()) > EPS)
+//			it.value() += m;
+//	}
+//	else {
+//		this->polynom.insert_after(m, it);
+//	}
+//
+//	//(*this).erase_zero();
+//}
 
 void Polynom::erase_zero() {
-	if (this->polynom.get_size() == 1) return;
-	else {
-		List<Monom>::Iterator it = this->polynom.begin();
-		List<Monom>::Iterator it_prev = it++;
-		while (it+1 != this->polynom.end()) {
-			if (abs(it.value().get_coef()) < EPS) {
-				this->polynom.erase_after(it_prev);
-				it = it_prev + 1;
-			}
-			else {
-				it = it_prev++;
+	visit([&](auto& ctr) {
+		std::vector<Monom> to_erase;
+
+		for (const auto& [monom, coef] : ctr) {
+			if (std::abs(coef) < EPS) {
+				to_erase.push_back(monom);
 			}
 		}
-		if (abs(it.value().get_coef()) < EPS)
-			this->polynom.erase_after(it_prev);
 
-	}
+		for (const auto& m : to_erase) {
+			ctr.erase(m);
+		}
+
+		if (ctr.empty()) {
+			ctr.insert(Monom(), 0.0);
+		}
+
+	}, container);
 }
