@@ -47,6 +47,7 @@ public:
 	size_t deg_z()const;
 	size_t get_deg()const;
 	double get_coef()const;
+	std::string get_str();
 
 	double point(double x, double y, double z);
 	void print();
@@ -86,6 +87,8 @@ public:
 	void add_monom(const Monom& m);
 	void add_monom_after(const Monom& m, List<Monom>::Iterator it);
 	void erase_zero();
-	
+	void reset();
+	std::string get_str();
+
 	~Polynom() { polynom.clear(); }
 };

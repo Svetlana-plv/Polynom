@@ -18,11 +18,14 @@
 #include <QStyleFactory>
 #include <QCursor>
 #include <QTimer>
+#include <QRegularExpression>
 
 
 
 widgetPolynom::widgetPolynom(QWidget* parent) : QWidget(parent)
 {
+    polynom = new Polynom();
+    //polynom->reset();
 
     drag = nullptr;
     auto backGround = new QFrame(this);
@@ -55,7 +58,15 @@ widgetPolynom::widgetPolynom(QWidget* parent) : QWidget(parent)
     lineEdit->setFont(QFont("Courier New", 12, QFont::Normal, false));
     lineEdit->setReadOnly(false);
     lineEdit->installEventFilter(this);
+    //if(polynom->)
+    //qDebug() << polynom->get_str();
+    //lineEdit->setText(QString::fromStdString((polynom->get_str())));
 
+    QFontMetrics fm(lineEdit->font());
+
+    int extra = this->width() - lineEdit->width();
+    int textWidth = fm.horizontalAdvance(lineEdit->text()) + 15;
+    this->setMaximumWidth(extra + textWidth + 15);
 
     auto backGrounglayout = new QHBoxLayout(backGround);
     backGrounglayout->setContentsMargins(0, 0, 5, 0);
@@ -222,7 +233,8 @@ bool widgetPolynom::eventFilter(QObject* obj, QEvent* event)
                 widgetPolynom* tmp = new widgetPolynom();
                 tmp->lineEdit->setText(this->lineEdit->text());
                 tmp->color->setStyleSheet(this->color->styleSheet());
-                
+                tmp->setMaximumWidth(this->maximumWidth());
+                qDebug() << tmp->maximumWidth();
                 QDrag* drag = new QDrag(tmp);
                 QMimeData* mimeData = new QMimeData;
 
@@ -264,6 +276,17 @@ bool widgetPolynom::eventFilter(QObject* obj, QEvent* event)
         else if (event->type() == QEvent::FocusOut) {
             qDebug() << "unfocus";
             lineEdit->setReadOnly(true);
+            polynom->reset();
+            try
+            {
+                polynom->parse_string(lineEdit->text().toStdString());
+            }
+            catch (...)
+            {
+                QMessageBox::critical(nullptr, "error", "error");
+                lineEdit->setText("");
+            }
+            lineEdit->setMaximumWidth(1000);
             emit unrequestConnect();
         }
     }
@@ -325,9 +348,43 @@ void widgetPolynom::fadeOutAndDelete(int duration)
     anim->start(QAbstractAnimation::DeleteWhenStopped); 
 }
 
+
 QLineEdit* widgetPolynom::getLineEdit() const
 {
     return lineEdit;
+}
+
+QString widgetPolynom::getPolynomStr() const {
+    return lineEdit->text();
+}
+
+void widgetPolynom::setPolynomStr(const QString& str) {
+    lineEdit->setText(str);
+    if (polynom) {
+        polynom->reset();
+        try {
+            polynom->parse_string(str.toStdString());
+        }
+        catch (...) {
+            QMessageBox::critical(nullptr, "error", "error");
+        }
+    }
+}
+
+QString widgetPolynom::getColorHex() const {
+    QString style = color->styleSheet();
+    QRegularExpression regex("#[0-9A-Fa-f]{6}");
+    QRegularExpressionMatch match = regex.match(style);
+    if (match.hasMatch()) {
+        return match.captured(0);
+    }
+    return "#000000"; // fallback
+}
+
+void widgetPolynom::setColorHex(const QColor& hexColor) {
+    if (color) {
+        color->setStyleSheet(QString("background-color: %1; border-radius: 3px;").arg(hexColor.name(QColor::HexArgb)));
+    }
 }
 
 QFrame* widgetPolynom::getColor() const

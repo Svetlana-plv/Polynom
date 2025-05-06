@@ -30,7 +30,7 @@ public:
     int horizontalSpacing() const;
     int verticalSpacing() const;
     void insertWidget(int index, QWidget* widget);
-
+    QList<widgetPolynom*> getPolynomsFromLayout();
 private:
     //int doLayout(const QRect& rect, bool testOnly) const;
     QList<QLayoutItem*> itemList;

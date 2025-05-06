@@ -10,7 +10,7 @@
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
 #include <QPushButton>
-
+#include "polynom.h"
 
 class widgetPolynom : public QWidget {
     Q_OBJECT
@@ -25,6 +25,7 @@ protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 public:
+    Polynom* polynom;
     QTimer* debounceTimer = nullptr;
     QDrag* drag;
     void fadeOutAndHide(int duration = 300);
@@ -60,6 +61,12 @@ public:
     void setBlueColor();
     void setYellowColor();
     void setPinkColor();
+
+    QString getPolynomStr() const;
+    void setPolynomStr(const QString& str);
+
+    QString getColorHex() const;
+    void setColorHex(const QColor& hexColor);
 
 signals:
     void requestConnect(widgetPolynom* sender);

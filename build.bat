@@ -19,5 +19,15 @@ cmake --build . --config Debug
 
 "%QT_PATH%\bin\windeployqt.exe" bin\gui_translator.exe --debug
 
+
+set SQLITE_DLL=%QT_PATH%\plugins\sqldrivers\qsqlite.dll
+set SQLITE_TARGET=bin\sqldrivers\qsqlite.dll
+
+if not exist bin\sqldrivers (
+    mkdir bin\sqldrivers
+)
+
+copy /Y "!SQLITE_DLL!" "!SQLITE_TARGET!"
+
 cd ..
 

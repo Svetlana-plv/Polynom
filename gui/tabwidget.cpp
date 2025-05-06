@@ -1,6 +1,7 @@
 #include "tabwidget.h"
 
 tabWidget::tabWidget(QWidget* parent) {
+
 	stackedWidget = new QStackedWidget(this);
 
 	calculator = new CalculatorWidget(this);
@@ -21,4 +22,12 @@ tabWidget::tabWidget(QWidget* parent) {
 	QVBoxLayout* layout = new QVBoxLayout(this);
 	layout->addWidget(stackedWidget);
 	setLayout(layout);
+}
+
+CalculatorWidget* tabWidget::getCalculator() {
+	return calculator;
+}
+
+void tabWidget::switchCalculator() {
+	stackedWidget->setCurrentWidget(calculator);
 }

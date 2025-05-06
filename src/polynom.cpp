@@ -182,6 +182,15 @@ void Polynom::print() {
 	std::cout << std::endl;
 }
 
+std::string Polynom::get_str() {
+	std::string result = "";
+	for (List<Monom>::Iterator it = polynom.begin(); it != polynom.end(); ++it) {
+		if(it != polynom.begin()) result += " + ";
+		result = result + it.value().get_str();
+	}
+	return result;
+}
+
 void Polynom::add_monom(const Monom& m) {
 	if (polynom.empty()) {
 		polynom.insert_front(m);
@@ -239,4 +248,8 @@ void Polynom::erase_zero() {
 			this->polynom.erase_after(it_prev);
 
 	}
+}
+
+void Polynom::reset() {
+	this->polynom.clear();
 }

@@ -88,6 +88,7 @@ void ContainerPolynom::dropEvent(QDropEvent* event)
         if (!w) return;
        
         w->setParent(this);
+        w->setPolynomStr(w->getLineEdit()->text());
         insertAnimated(w, insertIndex);  // Вставляем в новое место
         w->show();
 
@@ -204,5 +205,10 @@ void ContainerPolynom::insertAnimated(widgetPolynom* widget, int index)
 
     fadeAnim->start(QAbstractAnimation::DeleteWhenStopped);
     anim->start(QAbstractAnimation::DeleteWhenStopped);
+
+}
+
+
+void ContainerPolynom::calculate() {
 
 }

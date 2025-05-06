@@ -1,9 +1,13 @@
  #pragma once
 
 #include "tabwidget.h"
+#include "database.h"
 
 #include <QMainWindow>
 #include <QWidget>
+
+
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -17,12 +21,15 @@ class MainWindow : public QMainWindow {
 public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
+    void closeEvent(QCloseEvent* event);
 
 private:
-
+    int count = 0;
     Ui::MainWindow* ui;
 
     void addNewTab();
     void onTabChanged(int index);
+    void saveAllToDataBase();
+    void loadAllFromDatabase();
 };
 

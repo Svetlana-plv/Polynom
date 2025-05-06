@@ -107,4 +107,25 @@ void listLayout::insertWidget(int index, QWidget* widget)
 {
     QLayoutItem* item = new QWidgetItem(widget);
     itemList.insert(index, item);
+    update();
+}
+
+
+QList<widgetPolynom*> listLayout::getPolynomsFromLayout() {
+    QList<widgetPolynom*> result;
+
+    for (int i = 0; i < layout()->count(); ++i) {
+        QLayoutItem* item = layout()->itemAt(i);
+        if (!item) continue;
+
+        QWidget* widget = item->widget();
+        if (!widget) continue;
+
+        widgetPolynom* poly = qobject_cast<widgetPolynom*>(widget);
+        if (poly) {
+            result.append(poly);
+        }
+    }
+
+    return result;
 }

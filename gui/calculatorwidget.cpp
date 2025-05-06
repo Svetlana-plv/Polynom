@@ -40,7 +40,7 @@ CalculatorWidget::CalculatorWidget(QWidget* parent) : QWidget(parent), ui(new Ui
     ui->pushButton_pink->setFocusPolicy(Qt::NoFocus);
 
     auto* container = new ContainerPolynom();
-    auto* containerList = new listPolynom();
+    containerList = new listPolynom();
     ui->scrollArea->setWidget(container);
     ui->scrollArea_2->setWidget(containerList);
 
@@ -82,6 +82,7 @@ void CalculatorWidget::on_pushButton_yellow_clicked() { if (polynom) polynom->se
 void CalculatorWidget::on_pushButton_pink_clicked() { if (polynom) polynom->setPinkColor(); }
 
 
+
 void CalculatorWidget::onPolynomRequestConnect(widgetPolynom* sender) {
     polynom = sender;
 }
@@ -103,21 +104,42 @@ void CalculatorWidget::on_pushButton_clicked()
     widgetP->getLineEdit()->setFocus();
 }
 
+void CalculatorWidget::on_pushButton_calculate_clicked() {
+    auto flow = static_cast<FlowLayout*>(ui->scrollArea->widget()->layout());
+    auto result = new widgetPolynom();
+    connect(result, &widgetPolynom::requestConnect, this, &CalculatorWidget::onPolynomRequestConnect);
+    connect(result, &widgetPolynom::unrequestConnect, this, &CalculatorWidget::onPolynomUnrequestConnect);
+
+    for (int i = 0; i < flow->count(); ++i) {
+        QLayoutItem* item = flow->itemAt(i);
+        QWidget* widget = item->widget();
+        if (widget) {
+            widgetPolynom* poly = qobject_cast<widgetPolynom*>(widget);
+            *result->polynom = *result->polynom + *poly->polynom;
+            poly->fadeOutAndDelete(150);
+        }
+    }
+    result->getLineEdit()->setText(QString::fromStdString(result->polynom->get_str()));
+    qDebug() << result->getLineEdit()->maximumWidth();
+    addWidgetAnimation(result, flow);
+    result->getLineEdit()->setFocus();
+}
+
 void CalculatorWidget::addWidgetAnimation(QWidget* widget, FlowLayout* flow)
 {
     auto widgetP = qobject_cast<widgetPolynom*>(widget);
     if (!widgetP) return;
 
-    //int max = widgetP->maximumWidth();
+    int max = widgetP->maximumWidth();
 
     if (!flow) return;
     flow->addWidget(widgetP);
 
 
     auto anim = new QPropertyAnimation(widgetP, "maximumWidth", this);
-    anim->setDuration(1000);
+    anim->setDuration(300);
     anim->setStartValue(0);
-    anim->setEndValue(400);
+    anim->setEndValue(max);
     anim->setEasingCurve(QEasingCurve::OutCubic); // Пружинистый эффект
 
     auto* effect = new QGraphicsOpacityEffect(widgetP);
@@ -132,4 +154,13 @@ void CalculatorWidget::addWidgetAnimation(QWidget* widget, FlowLayout* flow)
 
     fadeAnim->start(QAbstractAnimation::DeleteWhenStopped);
     anim->start(QAbstractAnimation::DeleteWhenStopped);
+}
+
+listLayout* CalculatorWidget::getListLayout() {
+    auto list = static_cast<listLayout*>(ui->scrollArea_2->widget()->layout());
+    return list;
+}
+
+CalculatorWidget* CalculatorWidget::getCalculatorWidget() {
+    return this;
 }

@@ -9,7 +9,8 @@ class tabWidget : public QWidget {
     Q_OBJECT
 public:
     explicit tabWidget(QWidget* parent = nullptr);
-
+    CalculatorWidget* getCalculator();
+    void switchCalculator();
 private:
     SelectWidget* select;
     CalculatorWidget* calculator;

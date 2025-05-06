@@ -21,9 +21,12 @@ public:
     explicit CalculatorWidget(QWidget* parent = nullptr);
     ~CalculatorWidget();
     void addWidgetAnimation(QWidget* widget, FlowLayout* flow);
+    listLayout* getListLayout();
+    CalculatorWidget* getCalculatorWidget();
 private:
-    widgetPolynom* polynom = nullptr;
+    listPolynom* containerList;
     Ui::CalculatorWidget* ui;
+    widgetPolynom* polynom = nullptr;
 private slots:
     void on_pushButton_clicked();
     void on_pushButton_0_clicked();
@@ -54,4 +57,5 @@ private slots:
     void on_pushButton_pink_clicked();
     void onPolynomRequestConnect(widgetPolynom* sender);
     void onPolynomUnrequestConnect();
+    void on_pushButton_calculate_clicked();
 };

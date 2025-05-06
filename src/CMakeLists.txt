@@ -18,4 +18,3 @@ endif()
 add_library(${target} STATIC ${srcs} ${hdrs})
 target_link_libraries(${target} ${LIBRARY_DEPS})
 
-# Добавляем include директорию translator (уже добавлено в корневом CMakeLists.txt)

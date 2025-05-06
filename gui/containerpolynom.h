@@ -19,7 +19,7 @@ protected:
     void dropEvent(QDropEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
     void leaveEvent(QEvent* event) override;
-
+    void calculate();
 private:
     int insertIndex = -1;
 

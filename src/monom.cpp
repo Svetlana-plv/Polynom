@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include "polynom.h"
 
 Monom::Monom() : coef(0), deg(0) {};
@@ -106,4 +107,13 @@ double Monom::point(double x, double y, double z) {
 
 void Monom::print() {
 	std::cout << coef << " x^" << deg_x() << " y^" << deg_y() << " z^" << deg_z();
+}
+
+std::string Monom::get_str() {
+
+	std::ostringstream oss;
+	oss.precision(2);
+	oss << std::fixed << coef; 
+	std::string str = oss.str() + "x^" + std::to_string(deg_x()) + " y^" + std::to_string(deg_y()) + " z^" + std::to_string(deg_z());
+	return str;
 }
