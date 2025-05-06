@@ -32,29 +32,19 @@ public:
     class Iterator {
     private:
         Node* current;
-        //std::stack<Node*> stack;
 
     public:
 
-        Iterator(Node* node) : current(node) {
-            if (current) {
-                while (current->left) {
-                    current = current->left;
-                }
-            }
+        Iterator(Node* node) : current(node) {}
 
+        const std::pair<const Key&, const Value&> operator*() const {
+            if (!current) throw std::out_of_range("Elemint is nullptr");
+            return { current->key, current->value };
         }
 
-        //Iterator(const Node* node): current(RBTree<Key, Value>::minimum(node)){}
-
-        //const std::pair<const Key&, const Value&> operator*() const {
-        //    if (!current) throw std::out_of_range("Dereferencing end iterator");
-        //    return { current->key, current->value };
-        //}
-
         //const std::pair<const Key, Value>* operator->() const {
-        //    if (!current) throw std::out_of_range("Dereferencing end iterator");
-        //    return );
+        //    if (!current) throw std::out_of_range("Elemint is nullptr");
+        //    return reinterpret_cast<std::pair<const Key, Value>*>(&current->key);
         //}
         
         Iterator& operator++() {
@@ -101,13 +91,15 @@ public:
         if (node) return RBTree<Key, Value>::Iterator(node);
         return RBTree<Key, Value>::Iterator(nullptr);
     }
-    void insert(const Key& key, const Value& value);
+    Iterator insert(const Key& key, const Value& value);
+    void erase(const Key& key);
+
     size_t size() const { return item_count; }
     bool empty() const { return item_count == 0; }
     void clear();
     Iterator begin() const {
         if (!root) return end();
-        return Iterator();
+        return Iterator(RBTree<Key, Value>::minimum(root));
     }
     Iterator end() const { return Iterator(nullptr); }
     Node* get_root() const { return root; };
@@ -120,7 +112,9 @@ public:
 private:
     void rotateLeft(Node* x);
     void rotateRight(Node* y);
-    void balanceInsert(Node* k);
+    void balanceInsert(Node* z);
+    void balanceDelete(Node* z);
+    void transplant(Node* u, Node* v);
     Node* find(const Key& key, Node* current) const;
 
     void clear(Node* node);
@@ -128,7 +122,7 @@ private:
 
 // Insert
 template <typename Key, typename Value>
-void RBTree<Key, Value>::insert(const Key& key, const Value& value) {
+typename RBTree<Key, Value>::Iterator RBTree<Key, Value>::insert(const Key& key, const Value& value) {
     Node* node = new Node(key, value);
     Node* y = nullptr;
     Node* x = root;
@@ -145,7 +139,7 @@ void RBTree<Key, Value>::insert(const Key& key, const Value& value) {
             // Ключ уже существует - обновляем значение
             x->value = value;
             delete node;
-            return;
+            return Iterator(x);
         }
     }
 
@@ -163,57 +157,58 @@ void RBTree<Key, Value>::insert(const Key& key, const Value& value) {
     item_count++;
     if (node->parent == nullptr) {
         node->color = Color::BLACK;
-        return;
+        return Iterator(node);
     }
 
-    if (node->parent->parent == nullptr) {
-        return;
-    }
+    //if (node->parent->parent == nullptr) {
+    //    return Iterator(node);
+    //}
 
     balanceInsert(node);
+    return Iterator(node);
 }
 
 template <typename Key, typename Value>
-void RBTree<Key, Value>::balanceInsert(Node* k) {
+void RBTree<Key, Value>::balanceInsert(Node* z) {
     Node* u;
-    while (k->parent != nullptr && k->parent->color == Color::RED) {
-        if (k->parent == k->parent->parent->right) {
-            u = k->parent->parent->left;
+    while (z->parent != nullptr && z->parent->color == Color::RED) {
+        if (z->parent == z->parent->parent->right) {
+            u = z->parent->parent->left;
             if (u != nullptr && u->color == Color::RED) {
                 u->color = Color::BLACK;
-                k->parent->color = Color::BLACK;
-                k->parent->parent->color = Color::RED;
-                k = k->parent->parent;
+                z->parent->color = Color::BLACK;
+                z->parent->parent->color = Color::RED;
+                z = z->parent->parent;
             }
             else {
-                if (k == k->parent->left) {
-                    k = k->parent;
-                    rotateRight(k);
+                if (z == z->parent->left) {
+                    z = z->parent;
+                    rotateRight(z);
                 }
-                k->parent->color = Color::BLACK;
-                k->parent->parent->color = Color::RED;
-                rotateLeft(k->parent->parent);
+                z->parent->color = Color::BLACK;
+                z->parent->parent->color = Color::RED;
+                rotateLeft(z->parent->parent);
             }
         }
         else {
-            u = k->parent->parent->right;
+            u = z->parent->parent->right;
             if (u != nullptr && u->color == Color::RED) {
                 u->color = Color::BLACK;
-                k->parent->color = Color::BLACK;
-                k->parent->parent->color = Color::RED;
-                k = k->parent->parent;
+                z->parent->color = Color::BLACK;
+                z->parent->parent->color = Color::RED;
+                z = z->parent->parent;
             }
             else {
-                if (k == k->parent->right) {
-                    k = k->parent;
-                    rotateLeft(k);
+                if (z == z->parent->right) {
+                    z = z->parent;
+                    rotateLeft(z);
                 }
-                k->parent->color = Color::BLACK;
-                k->parent->parent->color = Color::RED;
-                rotateRight(k->parent->parent);
+                z->parent->color = Color::BLACK;
+                z->parent->parent->color = Color::RED;
+                rotateRight(z->parent->parent);
             }
         }
-        if (k == root) {
+        if (z == root) {
             break;
         }
     }
@@ -345,3 +340,141 @@ void RBTree<Key, Value>::clear(Node* node) {
         delete node;
     }
 }
+
+// Delete and supportive functions
+template <typename Key, typename Value>
+void RBTree<Key, Value>::erase(const Key& key) {
+
+    Node* z = find(key, this->root);
+    if (!z) return; // Node not found
+
+    Node* x;
+    Node* y = z;
+    Color original_color = y->color;
+
+    if (z->left == nullptr) {
+        x = z->right;
+        transplant(z, z->right);
+    }
+    else if (z->right == nullptr) {
+        x = z->left;
+        transplant(z, z->left);
+    }
+    else {
+        y = RBTree<Key, Value>::successor(z);
+        original_color = y->color;
+        x = y->right;
+
+        if (y->parent == z) {
+            if (x) x->parent = y;
+        }
+        else {
+            transplant(y, y->right);
+            y->right = z->right;
+            y->right->parent = y;
+        }
+
+        transplant(z, y);
+        y->left = z->left;
+        y->left->parent = y;
+        y->color = z->color;
+    }
+
+    delete z;
+    item_count--;
+
+    if (original_color == Color::BLACK) {
+        balanceDelete(x);
+    }
+}
+
+
+template <typename Key, typename Value>
+void RBTree<Key, Value>::transplant(Node* u, Node* v) {
+    if (u->parent == nullptr) {
+        root = v;
+    }
+    else if (u == u->parent->left) {
+        u->parent->left = v;
+    }
+    else {
+        u->parent->right = v;
+    }
+
+    if (v != nullptr) {
+        v->parent = u->parent;
+    }
+}
+
+
+template <typename Key, typename Value>
+void RBTree<Key, Value>::balanceDelete(Node* x) {
+    if (!x) return;
+
+    while (x != root && x->color == Color::BLACK) {
+        if (x == x->parent->left) {
+            Node* w = x->parent->right;
+
+            if (w->color == Color::RED) {
+                w->color = Color::BLACK;
+                x->parent->color = Color::RED;
+                rotateLeft(x->parent);
+                w = x->parent->right;
+            }
+
+            if ((!w->left || w->left->color == Color::BLACK) &&
+                (!w->right || w->right->color == Color::BLACK)) {
+                w->color = Color::RED;
+                x = x->parent;
+            }
+            else {
+                if (!w->right || w->right->color == Color::BLACK) {
+                    if (w->left) w->left->color = Color::BLACK;
+                    w->color = Color::RED;
+                    rotateRight(w);
+                    w = x->parent->right;
+                }
+
+                w->color = x->parent->color;
+                x->parent->color = Color::BLACK;
+                if (w->right) w->right->color = Color::BLACK;
+                rotateLeft(x->parent);
+                x = root;
+            }
+        }
+        else {
+            Node* w = x->parent->left;
+
+            if (w->color == Color::RED) {
+                w->color = Color::BLACK;
+                x->parent->color = Color::RED;
+                rotateRight(x->parent);
+                w = x->parent->left;
+            }
+
+            if ((!w->right || w->right->color == Color::BLACK) &&
+                (!w->left || w->left->color == Color::BLACK)) {
+                w->color = Color::RED;
+                x = x->parent;
+            }
+            else {
+                if (!w->left || w->left->color == Color::BLACK) {
+                    if (w->right) w->right->color = Color::BLACK;
+                    w->color = Color::RED;
+                    rotateLeft(w);
+                    w = x->parent->left;
+                }
+
+                w->color = x->parent->color;
+                x->parent->color = Color::BLACK;
+                if (w->left) w->left->color = Color::BLACK;
+                rotateRight(x->parent);
+                x = root;
+            }
+        }
+    }
+
+    x->color = Color::BLACK;
+}
+
+
