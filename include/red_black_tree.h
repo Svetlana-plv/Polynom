@@ -42,10 +42,10 @@ public:
             return { current->key, current->value };
         }
 
-        //const std::pair<const Key, Value>* operator->() const {
-        //    if (!current) throw std::out_of_range("Elemint is nullptr");
-        //    return reinterpret_cast<std::pair<const Key, Value>*>(&current->key);
-        //}
+        const std::pair<const Key, Value>* operator->() const {
+            if (!current) throw std::out_of_range("Elemint is nullptr");
+            return reinterpret_cast<std::pair<const Key, Value>*>(&current->key);
+        }
         
         Iterator& operator++() {
             if (current) {
