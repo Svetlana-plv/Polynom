@@ -209,5 +209,7 @@ public:
     }
 
     size_t size() const { return item_count; }
+    bool empty() const { return item_count==0; }
+    void clear() { table.clear(); }
     size_t table_size() const { return table.size(); }
 };
