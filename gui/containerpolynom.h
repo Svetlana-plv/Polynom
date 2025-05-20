@@ -4,13 +4,17 @@
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include "flowlayout.h"
+#include "polynom_container.h"
 
 class ContainerPolynom : public QWidget {
     Q_OBJECT
 public:
+    std::unique_ptr<polynomContainer> container;
     explicit ContainerPolynom(QWidget* parent = nullptr);
     void animateLayoutUpdate();
     void insertAnimated(widgetPolynom* widget, int index);
+    void setContainer(std::unique_ptr<polynomContainer> newContainer);
+    polynomContainer* getPolynomContainer();
 
 protected:
     void dragEnterEvent(QDragEnterEvent* event) override;
@@ -19,6 +23,7 @@ protected:
     void dropEvent(QDropEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
     void leaveEvent(QEvent* event) override;
+
     void calculate();
 private:
     int insertIndex = -1;

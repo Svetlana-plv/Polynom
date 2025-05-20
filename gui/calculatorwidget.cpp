@@ -1,11 +1,12 @@
 #include "calculatorwidget.h"
+#include "ordered_table_container.h"
 #include "ui_calculatorwidget.h"
 
 #include <QStyleFactory>
 #include <QApplication>
 
 
-CalculatorWidget::CalculatorWidget(QWidget* parent) : QWidget(parent), ui(new Ui::CalculatorWidget) {
+CalculatorWidget::CalculatorWidget(ContainerType state, QWidget* parent) : QWidget(parent), ui(new Ui::CalculatorWidget) {
 
     ui->setupUi(this);
 
@@ -39,8 +40,11 @@ CalculatorWidget::CalculatorWidget(QWidget* parent) : QWidget(parent), ui(new Ui
     ui->pushButton_yellow->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_pink->setFocusPolicy(Qt::NoFocus);
 
-    auto* container = new ContainerPolynom();
+    container = new ContainerPolynom();
+    container->setContainer(createContainer(state));
     containerList = new listPolynom();
+    containerList->setContainer(createContainer(state));
+
     ui->scrollArea->setWidget(container);
     ui->scrollArea_2->setWidget(containerList);
 
@@ -106,7 +110,12 @@ void CalculatorWidget::on_pushButton_clicked()
 
 void CalculatorWidget::on_pushButton_calculate_clicked() {
     auto flow = static_cast<FlowLayout*>(ui->scrollArea->widget()->layout());
+    auto ccontainer = qobject_cast<ContainerPolynom*>(ui->scrollArea->widget());
+    auto ccc = ccontainer->container.get();
+
     auto result = new widgetPolynom();
+    std::string str = "";
+
     connect(result, &widgetPolynom::requestConnect, this, &CalculatorWidget::onPolynomRequestConnect);
     connect(result, &widgetPolynom::unrequestConnect, this, &CalculatorWidget::onPolynomUnrequestConnect);
 
@@ -115,14 +124,20 @@ void CalculatorWidget::on_pushButton_calculate_clicked() {
         QWidget* widget = item->widget();
         if (widget) {
             widgetPolynom* poly = qobject_cast<widgetPolynom*>(widget);
-            *result->polynom = *result->polynom + *poly->polynom;
+            if (str != "") str = str + " + ";
+            str = str + ccc->find(poly->key)->value().get_str();
+
             poly->fadeOutAndDelete(150);
         }
     }
-    result->getLineEdit()->setText(QString::fromStdString(result->polynom->get_str()));
+
+    Polynom meow(str);
+
+    ccc->insert(meow.get_str(), meow);
+    result->getLineEdit()->setText(QString::fromStdString(meow.get_str()));
+    result->key = meow.get_str();
     qDebug() << result->getLineEdit()->maximumWidth();
     addWidgetAnimation(result, flow);
-    result->getLineEdit()->setFocus();
 }
 
 void CalculatorWidget::addWidgetAnimation(QWidget* widget, FlowLayout* flow)
@@ -163,4 +178,19 @@ listLayout* CalculatorWidget::getListLayout() {
 
 CalculatorWidget* CalculatorWidget::getCalculatorWidget() {
     return this;
+}
+
+std::unique_ptr<polynomContainer> CalculatorWidget::createContainer(ContainerType type) {
+    switch (type) {
+    case ContainerType::order_table:
+        return std::make_unique<orderedTablecontainer>();
+    case ContainerType::unorder_table:
+        //return std::make_unique<VectorPolynomContainer>();
+        break;
+    case ContainerType::AVLtree:
+        //return std::make_unique<ListPolynomContainer>();
+        break;
+    default:
+        throw std::runtime_error("Unknown container type");
+    }
 }

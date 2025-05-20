@@ -4,6 +4,7 @@
 #include "widgetpolynom.h"
 #include "ContainerPolynom.h"
 #include "listpolynom.h"
+#include "struct.h"
 
 #include <QWidget>
 #include <QLineEdit>
@@ -18,13 +19,18 @@ class CalculatorWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit CalculatorWidget(QWidget* parent = nullptr);
+    std::unique_ptr<polynomContainer> createContainer(ContainerType type);
+    explicit CalculatorWidget(ContainerType state = ContainerType::order_table, QWidget* parent = nullptr);
     ~CalculatorWidget();
     void addWidgetAnimation(QWidget* widget, FlowLayout* flow);
+
+    ContainerType state;
+
     listLayout* getListLayout();
     CalculatorWidget* getCalculatorWidget();
 private:
     listPolynom* containerList;
+    ContainerPolynom* container;
     Ui::CalculatorWidget* ui;
     widgetPolynom* polynom = nullptr;
 private slots:

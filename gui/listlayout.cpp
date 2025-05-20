@@ -129,3 +129,5 @@ QList<widgetPolynom*> listLayout::getPolynomsFromLayout() {
 
     return result;
 }
+
+

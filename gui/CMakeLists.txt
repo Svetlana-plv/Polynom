@@ -40,6 +40,8 @@ add_executable(gui_translator
 
     database.h
     database.cpp
+	
+    polynomContainerProvider.h
 
     resources.qrc
 )

@@ -10,26 +10,34 @@
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
 #include <QPushButton>
+#include <QJsonObject>
+#include <QJsonDocument>
 #include "polynom.h"
+#include "polynom_container.h"
+#include "struct.h"
 
 class widgetPolynom : public QWidget {
     Q_OBJECT
 private:
+    QTimer* hoverTimer = nullptr;
+    polynomContainer* container;
     QLabel* handle;
     QLineEdit* lineEdit;
     QFrame* color;
     QPoint startPos; 
     QPropertyAnimation* lineEditAnimation;
-
+    void startDrag();
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 public:
+    std::string key;
     Polynom* polynom;
     QTimer* debounceTimer = nullptr;
     QDrag* drag;
     void fadeOutAndHide(int duration = 300);
     explicit widgetPolynom(QWidget* parent = nullptr);
+    const Polynom& getPolynom() const;
     //delete
     QLineEdit* getLineEdit() const;
     QFrame* getColor() const;

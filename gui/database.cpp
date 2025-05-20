@@ -20,7 +20,8 @@ bool DatabaseManager::initDatabase() {
     if (!query.exec(
         "CREATE TABLE IF NOT EXISTS profiles ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-        "name TEXT NOT NULL)"
+        "name TEXT NOT NULL, "
+        "state INTEGER NOT NULL)"
     )) {
         qDebug() << "error to create profiles:" << query.lastError().text();
         return false;
@@ -32,6 +33,7 @@ bool DatabaseManager::initDatabase() {
         "profile_id INTEGER NOT NULL, "
         "expression TEXT, "
         "color TEXT, "
+        "key TEXT, "
         "FOREIGN KEY(profile_id) REFERENCES profiles(id) ON DELETE CASCADE)"
     )) {
         qDebug() << "Ошибка создания таблицы polynomials:" << query.lastError().text();

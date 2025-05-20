@@ -10,11 +10,9 @@ ContainerPolynom::ContainerPolynom(QWidget* parent)
     : QWidget(parent)
 {
 
-    //this->setStyleSheet("background-color: #737373; border: 2px solid #D9D9D9; border - radius: 5px;");
     setAcceptDrops(true);
     setLayout(new FlowLayout(this));
 
-    //this->setStyleSheet("background-color: #252525; border-radius: 3px;");
 }
 
 void ContainerPolynom::dragEnterEvent(QDragEnterEvent* event)
@@ -81,17 +79,29 @@ void ContainerPolynom::dropEvent(QDropEvent* event)
 {
     if (event->mimeData()->hasFormat("application/x-polynom-widget")) {
 
-        auto flow = static_cast<FlowLayout*>(layout());
-
         QByteArray ba = event->mimeData()->data("application/x-polynom-widget");
-        widgetPolynom* w = reinterpret_cast<widgetPolynom*>(ba.toULongLong());
+        QJsonDocument doc = QJsonDocument::fromJson(ba);
+
+        widgetPolynom* w = new widgetPolynom();
+        if (!doc.isNull() && doc.isObject()) {
+            QJsonObject obj = doc.object();
+
+            std::string key = obj["key"].toString().toStdString();
+            std::string str = obj["value"].toString().toStdString();
+            QString hexColor = obj["color"].toString();
+
+            container.get()->insert(key, Polynom(str));
+
+            w->setColorHex(hexColor);
+            w->key = key;
+            w->getLineEdit()->setText(QString::fromStdString(key));
+        }
+
         if (!w) return;
        
         w->setParent(this);
-        w->setPolynomStr(w->getLineEdit()->text());
         insertAnimated(w, insertIndex);  // Вставляем в новое место
         w->show();
-
 
         event->acceptProposedAction();
 
@@ -208,7 +218,10 @@ void ContainerPolynom::insertAnimated(widgetPolynom* widget, int index)
 
 }
 
+void ContainerPolynom::setContainer(std::unique_ptr<polynomContainer> newContainer) {
+    container = std::move(newContainer);
+}
 
-void ContainerPolynom::calculate() {
-
+polynomContainer* ContainerPolynom::getPolynomContainer() {
+    return container.get();
 }

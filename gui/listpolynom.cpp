@@ -22,7 +22,6 @@ void listPolynom::dragEnterEvent(QDragEnterEvent* event)
 
 void listPolynom::dragMoveEvent(QDragMoveEvent* event)
 {
-    // Если перетаскиваемые данные в правильном формате, разрешаем перемещение
     if (event->mimeData()->hasFormat("application/x-polynom-widget")) {
         event->acceptProposedAction();
 
@@ -63,35 +62,33 @@ void listPolynom::dropEvent(QDropEvent* event)
 {
     if (event->mimeData()->hasFormat("application/x-polynom-widget")) {
 
-        auto Llayout = static_cast<listLayout*>(layout());
-
         QByteArray ba = event->mimeData()->data("application/x-polynom-widget");
-        widgetPolynom* w = reinterpret_cast<widgetPolynom*>(ba.toULongLong());
+        QJsonDocument doc = QJsonDocument::fromJson(ba);
+
+        widgetPolynom* w = new widgetPolynom();
+        if (!doc.isNull() && doc.isObject()) {
+            QJsonObject obj = doc.object();
+
+            std::string key = obj["key"].toString().toStdString();
+            std::string str = obj["value"].toString().toStdString();
+            QString hexColor = obj["color"].toString();
+
+            container.get()->insert(key, Polynom(str));
+
+            w->setColorHex(hexColor);
+            w->key = key;
+            w->getLineEdit()->setText(QString::fromStdString(key));
+        }
 
         if (!w) return;
-        int count = Llayout->count();
-         
 
-        bool flag = false;
-        for (int i = 0; i < count; ++i) {
-            if (w->getLineEdit()->text() == qobject_cast<widgetPolynom*>(Llayout->itemAt(i)->widget())->getLineEdit()->text() &&
-                w->getColor()->styleSheet() == qobject_cast<widgetPolynom*>(Llayout->itemAt(i)->widget())->getColor()->styleSheet()
-                ) {
-                flag = true;
-                break;
-            }
-        }
-
-        if (count == 0 || !flag) {
-            Llayout->insertWidget(insertIndex, w);
-            w->setParent(this);
-            w->show();
-            Llayout->invalidate();
-        }
-        update();
+        w->setParent(this);
+        insertAnimated(w, insertIndex);  // Вставляем в новое место
+        w->show();
 
         event->acceptProposedAction();
 
+        animateLayoutUpdate();
         insertIndex = -1;  // Сбрасываем
     }
 }
@@ -123,4 +120,81 @@ void listPolynom::paintEvent(QPaintEvent* event)
             }
         }
     }
+}
+
+void listPolynom::setContainer(std::unique_ptr<polynomContainer> newContainer) {
+    container = std::move(newContainer);
+}
+
+polynomContainer* listPolynom::getPolynomContainer() {
+    return container.get();
+}
+
+void listPolynom::animateLayoutUpdate()
+{
+    auto flow = static_cast<listLayout*>(layout());
+    if (!flow)
+        return;
+
+    QVector<QPropertyAnimation*> animations;
+
+
+    QMap<QWidget*, QRect> oldGeometries;
+    for (int i = 0; i < flow->count(); ++i) {
+        QWidget* widget = flow->itemAt(i)->widget();
+        if (widget) {
+            oldGeometries[widget] = widget->geometry();
+        }
+    }
+
+    flow->invalidate();
+    flow->update();
+    flow->activate();
+
+    for (int i = 0; i < flow->count(); ++i) {
+        QWidget* widget = flow->itemAt(i)->widget();
+        if (widget && oldGeometries.contains(widget)) {
+            QRect startRect = oldGeometries[widget];
+            QRect endRect = widget->geometry();
+
+            auto anim = new QPropertyAnimation(widget, "geometry", this);
+            anim->setDuration(150);
+            anim->setStartValue(startRect);
+            anim->setEndValue(endRect);
+            anim->setEasingCurve(QEasingCurve::OutCubic); // плавная кривая
+
+            anim->start(QAbstractAnimation::DeleteWhenStopped);
+            animations.append(anim);
+        }
+    }
+}
+
+void listPolynom::insertAnimated(widgetPolynom* widget, int index)
+{
+    auto flow = static_cast<listLayout*>(layout());
+    if (!flow) return;
+
+    flow->insertWidget(index, widget);
+
+    int target = widget->maximumWidth();
+
+    auto anim = new QPropertyAnimation(widget, "maximumWidth", this);
+    anim->setDuration(600);
+    anim->setStartValue(0);
+    anim->setEndValue(target);
+    anim->setEasingCurve(QEasingCurve::OutCubic); // Пружинистый эффект
+
+
+    auto* effect = new QGraphicsOpacityEffect(widget);
+    widget->setGraphicsEffect(effect);
+    QPropertyAnimation* fadeAnim = new QPropertyAnimation(effect, "opacity");
+    fadeAnim->setDuration(600);
+    fadeAnim->setStartValue(0.0);
+    fadeAnim->setEndValue(1.0);
+    fadeAnim->setEasingCurve(QEasingCurve::OutCubic);
+
+
+    fadeAnim->start(QAbstractAnimation::DeleteWhenStopped);
+    anim->start(QAbstractAnimation::DeleteWhenStopped);
+
 }

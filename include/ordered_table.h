@@ -46,9 +46,9 @@ public:
 			return ptr;
 		}
 
-		TKey key() { return this->ptr.first; }
+		TKey key()  { return ptr->first; }
 
-		const TValue& value() {return this->ptr.second;}
+		TValue& value()  { return ptr->second; }
 
 		Iterator& operator++() {
 			ptr++;

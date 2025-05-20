@@ -1,6 +1,6 @@
 #include "widgetpolynom.h"
 #include "containerpolynom.h"
-
+#include "calculatorwidget.h"
 
 #include <iostream>
 #include <QMessageBox>
@@ -24,8 +24,6 @@
 
 widgetPolynom::widgetPolynom(QWidget* parent) : QWidget(parent)
 {
-    polynom = new Polynom();
-    //polynom->reset();
 
     drag = nullptr;
     auto backGround = new QFrame(this);
@@ -109,10 +107,26 @@ widgetPolynom::widgetPolynom(QWidget* parent) : QWidget(parent)
 
         });
 
-    connect(lineEdit, &QLineEdit::editingFinished, this, [this]() {
-        lineEdit->setReadOnly(true);
-    });
+    hoverTimer = new QTimer(this);
+    hoverTimer->setSingleShot(true);
+    hoverTimer->setInterval(1000);
 
+    connect(hoverTimer, &QTimer::timeout, this, [this]() {
+        auto containerPolynom = qobject_cast<ContainerPolynom*>(this->parentWidget());
+        if (!containerPolynom) {
+            auto containerPolynom = qobject_cast<listPolynom*>(this->parentWidget());
+            auto tmp = containerPolynom->getPolynomContainer()->find(key);
+            if (tmp) {
+                lineEdit->setText(QString::fromStdString(tmp->value().get_str()));
+            }
+        }
+        else {
+            auto tmp = containerPolynom->getPolynomContainer()->find(key);
+            if (tmp) {
+                lineEdit->setText(QString::fromStdString(tmp->value().get_str()));
+            }
+        }
+     });
 }
 
 
@@ -196,66 +210,61 @@ bool widgetPolynom::eventFilter(QObject* obj, QEvent* event)
             if ((mouseEvent->pos() - startPos).manhattanLength() < QApplication::startDragDistance())
                 return false;
             handle->setStyleSheet("background-color: #2d2d2d; border-radius: 3px;");
-            if (qobject_cast<ContainerPolynom*>(this->parentWidget())) {
-                this->fadeOutAndHide(90);
+
+            if (mouseEvent->modifiers() & Qt::ShiftModifier) {}
+            else this->fadeOutAndHide(90);
                
+            QJsonObject polyJson;
+            polyJson["key"] = QString::fromStdString(key);
 
-                QDrag* drag = new QDrag(this);
-                QMimeData* mimeData = new QMimeData;
+            if (qobject_cast<ContainerPolynom*>(this->parentWidget())) {
 
-                mimeData->setData("application/x-polynom-widget", QByteArray::number(reinterpret_cast<quintptr>(this)));
-                drag->setMimeData(mimeData);
+                auto containerPolynom = qobject_cast<ContainerPolynom*>(this->parentWidget());
+                auto tmp = containerPolynom->getPolynomContainer()->find(key);
+                polyJson["value"] = QString::fromStdString(tmp->value().get_str());
 
-                QPixmap pixmap(this->size());
-                pixmap.fill(Qt::transparent);
-                this->render(&pixmap);
-
-                QPixmap transparentPixmap(pixmap.size());
-                transparentPixmap.fill(Qt::transparent);
-                
-                QPainter painter(&transparentPixmap);
-                painter.setOpacity(0.5); // Установить прозрачность 50%
-                painter.drawPixmap(0, 0, pixmap);
-                painter.end();
-                
-                drag->setDragCursor(QPixmap(":/icons/no-drop.png"), Qt::IgnoreAction);
-                drag->setDragCursor(QPixmap(":/icons/grabbing.png"), Qt::MoveAction);
-                drag->setPixmap(transparentPixmap);
-                drag->setHotSpot(this->mapFromGlobal(handle->mapToGlobal(mouseEvent->pos())));
-
-                update();
-                qobject_cast<ContainerPolynom*>(this->parentWidget())->animateLayoutUpdate();
-                
-
-                drag->exec(Qt::MoveAction | Qt::CopyAction);
-            }
-            else {
-                widgetPolynom* tmp = new widgetPolynom();
-                tmp->lineEdit->setText(this->lineEdit->text());
-                tmp->color->setStyleSheet(this->color->styleSheet());
-                tmp->setMaximumWidth(this->maximumWidth());
-                qDebug() << tmp->maximumWidth();
-                QDrag* drag = new QDrag(tmp);
-                QMimeData* mimeData = new QMimeData;
-
-                mimeData->setData("application/x-polynom-widget", QByteArray::number(reinterpret_cast<quintptr>(tmp)));
-                drag->setMimeData(mimeData);
-
-                drag->setDragCursor(QPixmap(":/icons/no-drop.png"), Qt::IgnoreAction);
-                drag->setDragCursor(QPixmap(":/icons/grabbing.png"), Qt::MoveAction);
-                QPixmap pixmap(this->size());
-                pixmap.fill(Qt::transparent);
-                this->render(&pixmap);
-                drag->setPixmap(pixmap);
-                drag->setHotSpot(this->mapFromGlobal(handle->mapToGlobal(mouseEvent->pos())));
-
-
-                drag->exec(Qt::MoveAction | Qt::CopyAction);
-                update();
             }
 
-            //QApplication::restoreOverrideCursor();
-            return true; // событие обработано
+            else if (qobject_cast<listPolynom*>(this->parentWidget())) {
+                auto list = qobject_cast<listPolynom*>(this->parentWidget());
+                auto tmp = list->getPolynomContainer()->find(key);
+                polyJson["value"] = QString::fromStdString(tmp->value().get_str());
+            }
+
+            polyJson["color"] = getColorHex();
+
+            QJsonDocument doc(polyJson);
+            QByteArray jsonData = doc.toJson();
+
+            QMimeData* mimeData = new QMimeData;
+            mimeData->setData("application/x-polynom-widget", jsonData);
+
+            QDrag* drag = new QDrag(this);
+            drag->setMimeData(mimeData);
+
+            QPixmap pixmap(this->size());
+            pixmap.fill(Qt::transparent);
+            this->render(&pixmap);
+            QPixmap transparentPixmap(pixmap.size());
+            transparentPixmap.fill(Qt::transparent);
+                
+            QPainter painter(&transparentPixmap);
+            painter.setOpacity(0.5); // Установить прозрачность 50%
+            painter.drawPixmap(0, 0, pixmap);
+            painter.end();
+                
+            drag->setDragCursor(QPixmap(":/icons/no-drop.png"), Qt::IgnoreAction);
+            drag->setDragCursor(QPixmap(":/icons/grabbing.png"), Qt::MoveAction);
+            drag->setPixmap(transparentPixmap);
+            drag->setHotSpot(this->mapFromGlobal(handle->mapToGlobal(mouseEvent->pos())));
+
+            update();
+            if(qobject_cast<ContainerPolynom*>(this->parentWidget())) qobject_cast<ContainerPolynom*>(this->parentWidget())->animateLayoutUpdate();
+            if(qobject_cast<listPolynom*>(this->parentWidget())) qobject_cast<listPolynom*>(this->parentWidget())->animateLayoutUpdate();
+            drag->exec(Qt::MoveAction | Qt::CopyAction);
+
+            QApplication::restoreOverrideCursor();
+            return true;
         }
     
 
@@ -263,7 +272,15 @@ bool widgetPolynom::eventFilter(QObject* obj, QEvent* event)
 
     else if (obj == lineEdit) {
 
-        if (event->type() == QEvent::MouseButtonDblClick) {
+        if (event->type() == QEvent::Enter) {
+            hoverTimer->start();
+        }
+        else if (event->type() == QEvent::Leave) {
+            hoverTimer->stop();
+            lineEdit->setText(QString::fromStdString(key));
+        }
+
+        else if (event->type() == QEvent::MouseButtonDblClick) {
             lineEdit->setReadOnly(false);
             lineEdit->setFocus();
             lineEdit->selectAll();
@@ -276,16 +293,39 @@ bool widgetPolynom::eventFilter(QObject* obj, QEvent* event)
         else if (event->type() == QEvent::FocusOut) {
             qDebug() << "unfocus";
             lineEdit->setReadOnly(true);
-            polynom->reset();
-            try
-            {
-                polynom->parse_string(lineEdit->text().toStdString());
+            
+            auto containerPolynom = qobject_cast<ContainerPolynom*>(this->parentWidget());
+            if (!containerPolynom) return QWidget::eventFilter(obj, event);
+
+            if (key == "" && lineEdit->text() != "") {
+                containerPolynom->getPolynomContainer()->insert(lineEdit->text().toStdString(), Polynom());
+                key = lineEdit->text().toStdString();
             }
-            catch (...)
-            {
-                QMessageBox::critical(nullptr, "error", "error");
-                lineEdit->setText("");
+
+            else if (key != "" && lineEdit->text() != "") {
+                auto tmp = containerPolynom->getPolynomContainer()->find(key);
+                if (tmp) {
+                    try
+                    {
+                        tmp->value().parse_string(lineEdit->text().toStdString());
+                    }
+                    catch (...)
+                    {
+                        QMessageBox::critical(nullptr, "error", "error");
+                        lineEdit->setText("");
+                    }
+                    
+                }
+                lineEdit->setText(QString::fromStdString(key));
             }
+
+            else {
+                fadeOutAndDelete(150);
+            }
+
+            
+            //polynom->reset();
+
             lineEdit->setMaximumWidth(1000);
             emit unrequestConnect();
         }
@@ -293,6 +333,7 @@ bool widgetPolynom::eventFilter(QObject* obj, QEvent* event)
 
     return QWidget::eventFilter(obj, event);
 }
+
 
 void widgetPolynom::fadeOutAndHide(int duration)
 {
@@ -311,7 +352,8 @@ void widgetPolynom::fadeOutAndHide(int duration)
         // Можно также удалить эффект, если он больше не нужен
         this->setGraphicsEffect(nullptr);
         this->parentWidget()->layout()->removeWidget(this);
-        qobject_cast<ContainerPolynom*>(this->parentWidget())->animateLayoutUpdate();
+        if (qobject_cast<ContainerPolynom*>(this->parentWidget())) qobject_cast<ContainerPolynom*>(this->parentWidget())->animateLayoutUpdate();
+        if (qobject_cast<listPolynom*>(this->parentWidget())) qobject_cast<listPolynom*>(this->parentWidget())->animateLayoutUpdate();
         });
 
     anim->start(QAbstractAnimation::DeleteWhenStopped);
@@ -410,4 +452,29 @@ void widgetPolynom::setYellowColor() {
 
 void widgetPolynom::setPinkColor() {
     color->setStyleSheet(QString("background-color: #FFD1DC; border-radius: 3px;"));
+}
+
+void widgetPolynom::startDrag() {
+    QDrag* drag = new QDrag(this);
+    QMimeData* mimeData = new QMimeData();
+
+    QByteArray byteArray;
+    QDataStream out(&byteArray, QIODevice::WriteOnly);
+    
+
+
+    mimeData->setData("application/x-polynom", byteArray);
+    drag->setMimeData(mimeData);
+    drag->exec(Qt::CopyAction); // drag-and-copy
+}
+
+const Polynom& widgetPolynom::getPolynom() const {
+    if (!container) {
+        throw std::runtime_error("Container is null");
+    }
+    auto it = container->find(this->key);
+    if (!it) {
+        throw std::runtime_error("Polynom not found by key: " + this->key);
+    }
+    return it->value();
 }
