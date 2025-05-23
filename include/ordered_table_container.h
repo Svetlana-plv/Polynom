@@ -14,43 +14,45 @@ public:
     private:
         OrderedTable<std::string, Polynom>::Iterator it;
     public:
-        orderedTableIteratorAdapter(OrderedTable<std::string, Polynom>::Iterator& iter)
-            : it(iter) {}
+        orderedTableIteratorAdapter(OrderedTable<std::string, Polynom>::Iterator iter)
+            : it(std::move(iter)) {}
 
         std::pair<std::string, Polynom>& operator*() override {
             return *it;
         }
 
         std::pair<std::string, Polynom>* operator->() override {
-            return it.ptr;
+            return it.operator->();
         }
 
-        std::pair<std::string, Polynom>& operator++() override {
-            return *(++it);
+        Iterator& operator++() override {
+            ++it;
+            return *this;
         }
 
-        std::pair<std::string, Polynom>& operator--() override {
-            return *(--it);
+        Iterator& operator--() override {
+            --it;
+            return *this;
         }
 
-        std::pair<std::string, Polynom>& operator++(int) override {
-            OrderedTable<std::string, Polynom>::Iterator temp = it;
-            it++;
-            return *temp;
+        Iterator* operator++(int) override {
+            Iterator* copy = new orderedTableIteratorAdapter(it);
+            ++it;
+            return copy;
         }
 
-        std::pair<std::string, Polynom>& operator--(int) override {
-            OrderedTable<std::string, Polynom>::Iterator temp = it;
-            it--;
-            return *temp;
+        Iterator* operator--(int) override {
+            Iterator* copy = new orderedTableIteratorAdapter(it);
+            --it;
+            return copy;
         }
 
-        bool operator==(const polynomContainer::Iterator& other) const override {
-            const auto* o = dynamic_cast<const orderedTableIteratorAdapter*>(&other);
-            return o && this->it == o->it;
+        bool operator==(const Iterator& other) const override {
+            auto* otherPtr = dynamic_cast<const orderedTableIteratorAdapter*>(&other);
+            return otherPtr && this->it == otherPtr->it;
         }
 
-        bool operator!=(const polynomContainer::Iterator& other) const override {
+        bool operator!=(const Iterator& other) const override {
             return !(*this == other);
         }
 
@@ -63,33 +65,30 @@ public:
         }
     };
 
-    polynomContainer::Iterator* find(const std::string& v) override {
+    std::unique_ptr<Iterator> find(const std::string& v) override {
         auto it = data.find(v);
         if (it == data.end()) return nullptr;
-        return new orderedTableIteratorAdapter(it);
+        return std::make_unique<orderedTableIteratorAdapter>(it);
     }
 
-    polynomContainer::Iterator* insert(const std::string& v, const Polynom& m) override {
-        auto it = data.insert(v, m); 
-        return new orderedTableIteratorAdapter(it);
+    std::unique_ptr<Iterator> insert(const std::string& v, const Polynom& m) override {
+        auto it = data.insert(v, m);
+        return std::make_unique<orderedTableIteratorAdapter>(it);
     }
 
-    polynomContainer::Iterator* erase(const std::string& v) override {
+    std::unique_ptr<Iterator> erase(const std::string& v) override {
         auto it = data.find(v);
         if (it == data.end()) return nullptr;
-
         data.erase(v);
-        return new orderedTableIteratorAdapter(it);
+        return std::make_unique<orderedTableIteratorAdapter>(it);
     }
 
-    polynomContainer::Iterator* begin() override {
-        OrderedTable<std::string, Polynom>::Iterator it = data.begin();
-        return new orderedTableIteratorAdapter(it);
+    std::unique_ptr<Iterator> begin() override {
+        return std::make_unique<orderedTableIteratorAdapter>(data.begin());
     }
 
-    polynomContainer::Iterator* end() override {
-        OrderedTable<std::string, Polynom>::Iterator it = data.end();
-        return new orderedTableIteratorAdapter(it);
+    std::unique_ptr<Iterator> end() override {
+        return std::make_unique<orderedTableIteratorAdapter>(data.end());
     }
 
     int size() const override {

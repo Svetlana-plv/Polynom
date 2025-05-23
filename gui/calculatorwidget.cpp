@@ -1,5 +1,6 @@
 #include "calculatorwidget.h"
 #include "ordered_table_container.h"
+#include "unordered_table_container.h"
 #include "ui_calculatorwidget.h"
 
 #include <QStyleFactory>
@@ -40,8 +41,11 @@ CalculatorWidget::CalculatorWidget(ContainerType state, QWidget* parent) : QWidg
     ui->pushButton_yellow->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_pink->setFocusPolicy(Qt::NoFocus);
 
+    ui->pushButton_select->setFocusPolicy(Qt::NoFocus);
+
     container = new ContainerPolynom();
     container->setContainer(createContainer(state));
+
     containerList = new listPolynom();
     containerList->setContainer(createContainer(state));
 
@@ -73,7 +77,6 @@ void CalculatorWidget::on_pushButton_z_clicked() { if (polynom) polynom->getLine
 void CalculatorWidget::on_pushButton_dot_clicked() { if (polynom) polynom->getLineEdit()->setText(polynom->getLineEdit()->text() + "."); }
 void CalculatorWidget::on_pushButton_plus_clicked() { if (polynom) polynom->getLineEdit()->setText(polynom->getLineEdit()->text() + " + "); }
 void CalculatorWidget::on_pushButton_minus_clicked() { if (polynom) polynom->getLineEdit()->setText(polynom->getLineEdit()->text() + " - "); }
-//void CalculatorWidget::on_pushButton_minus_clicked() { if (polynom) polynom->getLineEdit()->setText(polynom->getLineEdit()->text() + " * "); }
 void CalculatorWidget::on_pushButton_up_clicked() { if (polynom) polynom->getLineEdit()->setText(polynom->getLineEdit()->text() + "^"); }
 void CalculatorWidget::on_pushButton_left_bracket_clicked() { if (polynom) polynom->getLineEdit()->setText(polynom->getLineEdit()->text() + "("); }
 void CalculatorWidget::on_pushButton_right_bracket_clicked() { if (polynom) polynom->getLineEdit()->setText(polynom->getLineEdit()->text() + ")"); }
@@ -84,6 +87,7 @@ void CalculatorWidget::on_pushButton_green_clicked() { if (polynom) polynom->set
 void CalculatorWidget::on_pushButton_blue_clicked() { if (polynom) polynom->setBlueColor(); }
 void CalculatorWidget::on_pushButton_yellow_clicked() { if (polynom) polynom->setYellowColor(); }
 void CalculatorWidget::on_pushButton_pink_clicked() { if (polynom) polynom->setPinkColor(); }
+void CalculatorWidget::on_pushButton_select_clicked() { emit switchSelect(state); }
 
 
 
@@ -185,12 +189,32 @@ std::unique_ptr<polynomContainer> CalculatorWidget::createContainer(ContainerTyp
     case ContainerType::order_table:
         return std::make_unique<orderedTablecontainer>();
     case ContainerType::unorder_table:
-        //return std::make_unique<VectorPolynomContainer>();
-        break;
+        return std::make_unique<unorderedTablecontainer>();
     case ContainerType::AVLtree:
         //return std::make_unique<ListPolynomContainer>();
         break;
     default:
         throw std::runtime_error("Unknown container type");
     }
+}
+
+void CalculatorWidget::repack(ContainerType state) {
+    if (this->state == state) return;
+    this->state = state;
+
+    auto newContainer = std::make_unique<ContainerPolynom>();
+    newContainer->setContainer(createContainer(this->state));
+
+    auto oldCtr = container->container.get();
+    auto newCtr = newContainer->container.get();
+    
+    for (auto it = oldCtr->begin(); !(it->operator==(*oldCtr->end())); ++(*it)) {
+        std::string key = it->key();
+        std::string value = it->value().get_str();
+        newCtr->insert(key, Polynom(value));
+    }
+
+    delete container;
+    container = newContainer.release();
+    ui->scrollArea->setWidget(container);
 }

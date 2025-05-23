@@ -23,18 +23,22 @@ private:
 public:
 	class Iterator {
 	public:
-		pair<TKey, TValue>* p; //poinrer
-		Iterator(pair<TKey, TValue>* pair) : p(pair) {}
+		pair<TKey, TValue>* ptr; //poinrer
+		Iterator(pair<TKey, TValue>* pair) : ptr(pair) {}
 
 		Iterator& operator++() {
-			p++;
+			ptr++;
 			return *this;
 		}
 		
 		Iterator& operator--() {
-			p--;
+			ptr--;
 			return *this;
 		}
+
+		TKey key() { return ptr->first; }
+
+		TValue& value() { return ptr->second; }
 
 		//postfix
 		Iterator operator++(int) {
@@ -90,19 +94,19 @@ public:
 		}
 
 		bool operator==(const Iterator& It) const {
-			return p == It.p;
+			return ptr == It.ptr;
 		}
 
 		bool operator!=(const Iterator& It) const {
-			return p != It.p;
+			return ptr != It.ptr;
 		}
 
 		pair<TKey, TValue>& operator*() const {
-			return *p;
+			return *ptr;
 		}
 
 		pair<TKey, TValue>* operator->() const {
-			return p;
+			return ptr;
 		}
 	};
 

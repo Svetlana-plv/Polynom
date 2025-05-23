@@ -10,10 +10,8 @@
 class tabWidget : public QWidget {
     Q_OBJECT
 public:
-    std::unique_ptr<polynomContainer> container;
-
-    explicit tabWidget(QWidget* parent = nullptr);
-    explicit tabWidget(ContainerType state, QWidget* parent = nullptr);
+    ContainerType state = ContainerType::order_table; //def
+    explicit tabWidget(QWidget* parent = nullptr, ContainerType state = ContainerType::order_table);
 
     CalculatorWidget* getCalculator();
     void switchCalculator();

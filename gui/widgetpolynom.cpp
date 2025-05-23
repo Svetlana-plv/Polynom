@@ -193,7 +193,7 @@ bool widgetPolynom::eventFilter(QObject* obj, QEvent* event)
                         QString("background-color: %1; border-radius: 3px;")
                         .arg(c.name())
                     );
-                    });
+                });
 
                 menu->exec(handle->mapToGlobal(QPoint(0, handle->height())));
                 return true;

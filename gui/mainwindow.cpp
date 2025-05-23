@@ -116,7 +116,7 @@ void MainWindow::loadAllFromDatabase() {
         QString profileName = profileQuery.value(1).toString();
         int state = profileQuery.value(2).toInt();
 
-        tabWidget* tab = new tabWidget(static_cast<ContainerType>(state), this);
+        tabWidget* tab = new tabWidget(this, static_cast<ContainerType>(state));
         tab->setMaximumSize(this->maximumSize());
         tab->setMinimumSize(this->minimumSize());
         tab->getCalculator()->state = static_cast<ContainerType>(state);

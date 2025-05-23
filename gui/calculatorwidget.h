@@ -23,8 +23,8 @@ public:
     explicit CalculatorWidget(ContainerType state = ContainerType::order_table, QWidget* parent = nullptr);
     ~CalculatorWidget();
     void addWidgetAnimation(QWidget* widget, FlowLayout* flow);
-
-    ContainerType state;
+    void repack(ContainerType state);
+    ContainerType state = ContainerType::order_table;
 
     listLayout* getListLayout();
     CalculatorWidget* getCalculatorWidget();
@@ -64,4 +64,7 @@ private slots:
     void onPolynomRequestConnect(widgetPolynom* sender);
     void onPolynomUnrequestConnect();
     void on_pushButton_calculate_clicked();
+    void on_pushButton_select_clicked();
+signals:
+    void switchSelect(ContainerType state);
 };

@@ -14,12 +14,14 @@ class SelectWidget : public QWidget {
 public:
     explicit SelectWidget(QWidget* parent = nullptr);
     ContainerType state;
+    void setState(ContainerType newState);
     ~SelectWidget();
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 private:
     Ui::SelectWidget* ui;
-
+    void highlightSelectedButton();
+    void clearButtonStyles();
 signals:
     void switchRequested(ContainerType state);
 

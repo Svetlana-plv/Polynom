@@ -8,10 +8,10 @@ public:
     public:
         virtual std::pair<std::string, Polynom>& operator*() = 0;
         virtual std::pair<std::string, Polynom>* operator->() = 0;
-        virtual std::pair<std::string, Polynom>& operator++() = 0;
-        virtual std::pair<std::string, Polynom>& operator--() = 0;
-        virtual std::pair<std::string, Polynom>& operator++(int) = 0;
-        virtual std::pair<std::string, Polynom>& operator--(int) = 0;
+        virtual Iterator& operator++() = 0;
+        virtual Iterator& operator--() = 0;
+        virtual Iterator* operator++(int) = 0;
+        virtual Iterator* operator--(int) = 0;
         virtual bool operator!=(const Iterator& other) const = 0;
         virtual bool operator==(const Iterator& other) const = 0;
         virtual std::string key() = 0;
@@ -20,12 +20,12 @@ public:
 
     virtual ~polynomContainer() = default;
 
-    virtual Iterator* insert(const std::string& v, const Polynom& m) = 0;
-    virtual Iterator* erase(const std::string& v) = 0;
-    virtual Iterator* find(const std::string& v) = 0;
+    virtual std::unique_ptr<Iterator> insert(const std::string& v, const Polynom& m) = 0;
+    virtual std::unique_ptr<Iterator> erase(const std::string& v) = 0;
+    virtual std::unique_ptr<Iterator> find(const std::string& v) = 0;
 
-    virtual Iterator* begin() = 0;
-    virtual Iterator* end() = 0;
+    virtual std::unique_ptr<Iterator> begin() = 0;
+    virtual std::unique_ptr<Iterator> end() = 0;
 
     virtual int size() const = 0;
     virtual bool empty() const = 0;
