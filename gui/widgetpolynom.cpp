@@ -24,13 +24,11 @@
 
 widgetPolynom::widgetPolynom(QWidget* parent) : QWidget(parent)
 {
-
-    drag = nullptr;
     auto backGround = new QFrame(this);
     backGround->setStyleSheet("background-color: #2d2d2d; border-radius: 4px;");
     backGround->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     backGround->setContentsMargins(0, 0, 0, 0);
-
+    
 
     handle = new QLabel(backGround);
     handle->setContentsMargins(0, -1, 0, 1);
@@ -54,11 +52,8 @@ widgetPolynom::widgetPolynom(QWidget* parent) : QWidget(parent)
     lineEdit->setTextMargins(0, 2, 0, 0); 
     lineEdit->setFixedWidth(50);
     lineEdit->setFont(QFont("Courier New", 12, QFont::Normal, false));
-    lineEdit->setReadOnly(false);
+    lineEdit->setReadOnly(true);
     lineEdit->installEventFilter(this);
-    //if(polynom->)
-    //qDebug() << polynom->get_str();
-    //lineEdit->setText(QString::fromStdString((polynom->get_str())));
 
     QFontMetrics fm(lineEdit->font());
 
@@ -81,10 +76,6 @@ widgetPolynom::widgetPolynom(QWidget* parent) : QWidget(parent)
     lineEditAnimation->setDuration(150);
     lineEditAnimation->setEasingCurve(QEasingCurve::OutCubic); 
 
-    //connect(lineEdit, &QLineEdit::hasFocus, this, [this]() {
-    //    this->parent()->parent();
-    //});
-
     //adding
     connect(lineEdit, &QLineEdit::textChanged, this, [this]() {
         QFontMetrics fm(lineEdit->font());
@@ -96,7 +87,6 @@ widgetPolynom::widgetPolynom(QWidget* parent) : QWidget(parent)
         if (this->maximumWidth() < target) {
             this->setMaximumWidth(target);
         }
-        qDebug() << this->maximumWidth();
 
         lineEditAnimation->stop();
         lineEditAnimation->setStartValue(lineEdit->width());
@@ -104,29 +94,17 @@ widgetPolynom::widgetPolynom(QWidget* parent) : QWidget(parent)
         lineEditAnimation->start();
 
         this->updateGeometry();
-
         });
 
     hoverTimer = new QTimer(this);
     hoverTimer->setSingleShot(true);
-    hoverTimer->setInterval(1000);
+    hoverTimer->setInterval(650);
 
     connect(hoverTimer, &QTimer::timeout, this, [this]() {
-        auto containerPolynom = qobject_cast<ContainerPolynom*>(this->parentWidget());
-        if (!containerPolynom) {
-            auto containerPolynom = qobject_cast<listPolynom*>(this->parentWidget());
-            auto tmp = containerPolynom->getPolynomContainer()->find(key);
-            if (tmp) {
-                lineEdit->setText(QString::fromStdString(tmp->value().get_str()));
-            }
+        if (!lineEdit->hasFocus()) {
+            lineEdit->setText(QString::fromStdString(value));
         }
-        else {
-            auto tmp = containerPolynom->getPolynomContainer()->find(key);
-            if (tmp) {
-                lineEdit->setText(QString::fromStdString(tmp->value().get_str()));
-            }
-        }
-     });
+    });
 }
 
 
@@ -154,8 +132,7 @@ bool widgetPolynom::eventFilter(QObject* obj, QEvent* event)
                 
                 menu->setStyleSheet(menuStyle);
                 
-                QAction* action1 = menu->addAction("Edit text");
-                QAction* action2 = menu->addAction("Reset");
+                QAction* action1 = menu->addAction("Set key");
                 QAction* action4 = menu->addAction("Delete");
 
                 QMenu* colorMenu = menu->addMenu("Color");
@@ -174,15 +151,22 @@ bool widgetPolynom::eventFilter(QObject* obj, QEvent* event)
                     colorMenu->addAction(pair.first)->setData(pair.second);
                 }
 
-                connect(menu, &QMenu::triggered, this, [this, action1, action2, action4](QAction* act) {
+                connect(menu, &QMenu::triggered, this, [this, action1, action4](QAction* act) {
                     if (act == action1) {
                         lineEdit->setReadOnly(false);
+                        if (value == key) {
+                            lineEdit->setText("");
+                        }
                         lineEdit->setFocus();
-                    }
-                    else if (act == action2) {
-                        lineEdit->clear();
+                        lineEdit->selectAll();
+                        setKeyAndValue = false; //!!!
+                        setKey = true;
                     }
                     else if (act == action4) {
+                        if (qobject_cast<listPolynom*>(this->parentWidget())) {
+                            auto list = qobject_cast<listPolynom*>(this->parentWidget());
+                            list->getPolynomContainer()->erase(key); 
+                        }
                         this->fadeOutAndDelete(300);
                     }
                     });
@@ -215,23 +199,11 @@ bool widgetPolynom::eventFilter(QObject* obj, QEvent* event)
             else this->fadeOutAndHide(90);
                
             QJsonObject polyJson;
+            
             polyJson["key"] = QString::fromStdString(key);
-
-            if (qobject_cast<ContainerPolynom*>(this->parentWidget())) {
-
-                auto containerPolynom = qobject_cast<ContainerPolynom*>(this->parentWidget());
-                auto tmp = containerPolynom->getPolynomContainer()->find(key);
-                polyJson["value"] = QString::fromStdString(tmp->value().get_str());
-
-            }
-
-            else if (qobject_cast<listPolynom*>(this->parentWidget())) {
-                auto list = qobject_cast<listPolynom*>(this->parentWidget());
-                auto tmp = list->getPolynomContainer()->find(key);
-                polyJson["value"] = QString::fromStdString(tmp->value().get_str());
-            }
-
-            polyJson["color"] = getColorHex();
+            polyJson["value"] = QString::fromStdString(value);
+            polyJson["color"] = color->styleSheet();
+            polyJson["bool"] = setKeyAndValue;
 
             QJsonDocument doc(polyJson);
             QByteArray jsonData = doc.toJson();
@@ -259,11 +231,18 @@ bool widgetPolynom::eventFilter(QObject* obj, QEvent* event)
             drag->setHotSpot(this->mapFromGlobal(handle->mapToGlobal(mouseEvent->pos())));
 
             update();
-            if(qobject_cast<ContainerPolynom*>(this->parentWidget())) qobject_cast<ContainerPolynom*>(this->parentWidget())->animateLayoutUpdate();
-            if(qobject_cast<listPolynom*>(this->parentWidget())) qobject_cast<listPolynom*>(this->parentWidget())->animateLayoutUpdate();
             drag->exec(Qt::MoveAction | Qt::CopyAction);
 
             QApplication::restoreOverrideCursor();
+
+
+            if (qobject_cast<listPolynom*>(this->parentWidget()))
+            {
+                auto list = qobject_cast<listPolynom*>(this->parentWidget());
+                QTimer::singleShot(0, list, [list]() {
+                    qobject_cast<listLayout*>(list->layout())->updateVisibleWidgets();
+                });
+            }
             return true;
         }
     
@@ -277,57 +256,78 @@ bool widgetPolynom::eventFilter(QObject* obj, QEvent* event)
         }
         else if (event->type() == QEvent::Leave) {
             hoverTimer->stop();
-            lineEdit->setText(QString::fromStdString(key));
+            if (!lineEdit->hasFocus()) {
+                lineEdit->setText(QString::fromStdString(key));
+            }
         }
 
         else if (event->type() == QEvent::MouseButtonDblClick) {
             lineEdit->setReadOnly(false);
             lineEdit->setFocus();
-            lineEdit->selectAll();
+            if (setKey != true) {
+                lineEdit->setText(QString::fromStdString(value));
+            }
+            lineEdit->selectAll();  
+
             return true;
         }
         else if (event->type() == QEvent::FocusIn) {
-            qDebug() << "focus";
             emit requestConnect(this);
         }
         else if (event->type() == QEvent::FocusOut) {
-            qDebug() << "unfocus";
             lineEdit->setReadOnly(true);
-            
-            auto containerPolynom = qobject_cast<ContainerPolynom*>(this->parentWidget());
-            if (!containerPolynom) return QWidget::eventFilter(obj, event);
 
-            if (key == "" && lineEdit->text() != "") {
-                containerPolynom->getPolynomContainer()->insert(lineEdit->text().toStdString(), Polynom());
-                key = lineEdit->text().toStdString();
-            }
+            if (setKey == true) {
 
-            else if (key != "" && lineEdit->text() != "") {
-                auto tmp = containerPolynom->getPolynomContainer()->find(key);
-                if (tmp) {
-                    try
-                    {
-                        tmp->value().parse_string(lineEdit->text().toStdString());
-                    }
-                    catch (...)
-                    {
-                        QMessageBox::critical(nullptr, "error", "error");
-                        lineEdit->setText("");
-                    }
+                if (qobject_cast<listPolynom*>(this->parentWidget())) {
+                    auto list = qobject_cast<listPolynom*>(this->parentWidget());
+                    auto cont = list->getPolynomContainer();
+
+                    cont->erase(key);
+                    cont->insert(lineEdit->text().toStdString(), value);
                     
+                    QTimer::singleShot(0, list, [list]() {
+                        qobject_cast<listLayout*>(list->layout())->updateVisibleWidgets();
+                        });
                 }
-                lineEdit->setText(QString::fromStdString(key));
+                else {
+                    key = lineEdit->text().toStdString();
+                }
+
+                setKey = false;
+            }
+            else {
+                if (setKeyAndValue) {
+                    key = lineEdit->text().toStdString();
+                    value = lineEdit->text().toStdString();
+                }
+
+                else {
+                    value = lineEdit->text().toStdString();
+
+                    if (qobject_cast<listPolynom*>(this->parentWidget())) {
+                        auto list = qobject_cast<listPolynom*>(this->parentWidget());
+                        auto tmp = list->getPolynomContainer()->find(key);
+                        tmp->value().parse_string(value);
+                    }
+                }
+
             }
 
-            else {
+            if (key == "") {
                 fadeOutAndDelete(150);
             }
 
-            
-            //polynom->reset();
-
-            lineEdit->setMaximumWidth(1000);
+            lineEdit->setText(QString::fromStdString(key));
             emit unrequestConnect();
+            //lineEdit->setMaximumWidth(1000);
+        }
+
+        if (event->type() == QEvent::KeyPress) {
+            QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
+            if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
+                lineEdit->clearFocus();
+            }
         }
     }
 
@@ -346,13 +346,10 @@ void widgetPolynom::fadeOutAndHide(int duration)
     anim->setStartValue(1.0);
     anim->setEndValue(0.0);
 
-    // по завершении анимации — скрыть виджет
     connect(anim, &QPropertyAnimation::finished, this, [this]() {
         this->hide();
-        // Можно также удалить эффект, если он больше не нужен
         this->setGraphicsEffect(nullptr);
         this->parentWidget()->layout()->removeWidget(this);
-        if (qobject_cast<ContainerPolynom*>(this->parentWidget())) qobject_cast<ContainerPolynom*>(this->parentWidget())->animateLayoutUpdate();
         if (qobject_cast<listPolynom*>(this->parentWidget())) qobject_cast<listPolynom*>(this->parentWidget())->animateLayoutUpdate();
         });
 
@@ -398,19 +395,6 @@ QLineEdit* widgetPolynom::getLineEdit() const
 
 QString widgetPolynom::getPolynomStr() const {
     return lineEdit->text();
-}
-
-void widgetPolynom::setPolynomStr(const QString& str) {
-    lineEdit->setText(str);
-    if (polynom) {
-        polynom->reset();
-        try {
-            polynom->parse_string(str.toStdString());
-        }
-        catch (...) {
-            QMessageBox::critical(nullptr, "error", "error");
-        }
-    }
 }
 
 QString widgetPolynom::getColorHex() const {

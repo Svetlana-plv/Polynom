@@ -107,7 +107,7 @@ void listLayout::insertWidget(int index, QWidget* widget)
 {
     QLayoutItem* item = new QWidgetItem(widget);
     itemList.insert(index, item);
-    update();
+    updateVisibleWidgets();
 }
 
 
@@ -128,6 +128,50 @@ QList<widgetPolynom*> listLayout::getPolynomsFromLayout() {
     }
 
     return result;
+}
+
+void listLayout::updateVisibleWidgets(const QString& filter) {
+    QLayoutItem* item;
+    while ((item = takeAt(0)) != nullptr) {
+        if (item->widget()) {
+            delete item->widget();
+        }
+        delete item;
+    }
+
+    if (!container) return;
+
+    int count = 0;
+
+    for (auto it = container->begin(); it->operator!=(*container->end()) && count < maxVisibleCount; ++(*it)) {
+
+        if (filter != "") {
+            QString keyQString = QString::fromStdString((*it).key());
+            if (!filter.isEmpty() && !keyQString.contains(filter, Qt::CaseInsensitive)) {
+                continue;
+            }
+        }
+
+        widgetPolynom* widget = new widgetPolynom();
+        widget->setVisible(false);
+        widget->key = (*it).key();
+        widget->value = (*it).value().get_str();
+        addWidget(widget);
+        
+        widget->getLineEdit()->setText(QString::fromStdString(widget->key));
+        widget->setKeyAndValue = false;
+        widget->setVisible(true);
+
+
+        ++count;
+        if (count >= maxVisibleCount) break;
+    }
+    update();
+}
+
+
+void listLayout::setContainer(polynomContainer* ctr) {
+    container = ctr;
 }
 
 

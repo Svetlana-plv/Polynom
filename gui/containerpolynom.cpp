@@ -87,14 +87,18 @@ void ContainerPolynom::dropEvent(QDropEvent* event)
             QJsonObject obj = doc.object();
 
             std::string key = obj["key"].toString().toStdString();
-            std::string str = obj["value"].toString().toStdString();
-            QString hexColor = obj["color"].toString();
+            std::string val = obj["value"].toString().toStdString();
+            QString col = obj["color"].toString();
+            bool setKeyAndValue = obj["bool"].toBool();
 
-            container.get()->insert(key, Polynom(str));
-
-            w->setColorHex(hexColor);
+            
             w->key = key;
+            w->value = val;
+            w->getColor()->setStyleSheet(col);
+            w->setKeyAndValue = setKeyAndValue;
+
             w->getLineEdit()->setText(QString::fromStdString(key));
+
         }
 
         if (!w) return;
@@ -218,9 +222,6 @@ void ContainerPolynom::insertAnimated(widgetPolynom* widget, int index)
 
 }
 
-void ContainerPolynom::setContainer(std::unique_ptr<polynomContainer> newContainer) {
-    container = std::move(newContainer);
-}
 
 polynomContainer* ContainerPolynom::getPolynomContainer() {
     return container.get();

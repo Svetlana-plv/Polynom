@@ -5,6 +5,7 @@
 #include <functional>
 #include <stdexcept>
 #include "structs.h"
+#include "polynom.h"
 
 using namespace std;
 
@@ -28,12 +29,9 @@ public:
 
 class RPNCalculator {
 public:
-    double evaluate(const vector<token>& tokens, const unordered_map<string, double>& variables);
+    Polynom evaluate(const vector<token>& tokens);
 private:
     // Применить оператор
-    double applyOperator(const string& op, double a, double b);
-    double applyConst(const string& con);
-    double applyUnaryOperator(const string& op, double a);
-    //i don't now how it works but it works
-    double applyFunction(const std::string& func, double arg);
+    Polynom applyOperator(const string& op, Polynom& a, Polynom& b);
+    Polynom applyUnaryOperator(const string& op, Polynom& a);
 };

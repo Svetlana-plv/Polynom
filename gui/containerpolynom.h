@@ -13,7 +13,6 @@ public:
     explicit ContainerPolynom(QWidget* parent = nullptr);
     void animateLayoutUpdate();
     void insertAnimated(widgetPolynom* widget, int index);
-    void setContainer(std::unique_ptr<polynomContainer> newContainer);
     polynomContainer* getPolynomContainer();
 
 protected:

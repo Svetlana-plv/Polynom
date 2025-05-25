@@ -7,10 +7,11 @@
 #include <QPainter>
 
 listPolynom::listPolynom(QWidget* parent)
-    : QWidget(parent)
 {
+
     setAcceptDrops(true);
     setLayout(new listLayout(this));
+
 }
 
 void listPolynom::dragEnterEvent(QDragEnterEvent* event)
@@ -65,26 +66,25 @@ void listPolynom::dropEvent(QDropEvent* event)
         QByteArray ba = event->mimeData()->data("application/x-polynom-widget");
         QJsonDocument doc = QJsonDocument::fromJson(ba);
 
-        widgetPolynom* w = new widgetPolynom();
+
         if (!doc.isNull() && doc.isObject()) {
             QJsonObject obj = doc.object();
 
             std::string key = obj["key"].toString().toStdString();
             std::string str = obj["value"].toString().toStdString();
-            QString hexColor = obj["color"].toString();
+            
+            if (key == "" || container.get()->find(key)) {
+                return;
+            }
+
+            //widgetPolynom* widget = new widgetPolynom();
+           // widget->key = key;
+            //widget->value = str;
+            //widget->setKeyAndValue = false;
 
             container.get()->insert(key, Polynom(str));
-
-            w->setColorHex(hexColor);
-            w->key = key;
-            w->getLineEdit()->setText(QString::fromStdString(key));
+            qobject_cast<listLayout*>(this->layout())->updateVisibleWidgets();
         }
-
-        if (!w) return;
-
-        w->setParent(this);
-        insertAnimated(w, insertIndex);  // Вставляем в новое место
-        w->show();
 
         event->acceptProposedAction();
 
@@ -124,6 +124,8 @@ void listPolynom::paintEvent(QPaintEvent* event)
 
 void listPolynom::setContainer(std::unique_ptr<polynomContainer> newContainer) {
     container = std::move(newContainer);
+    qobject_cast<listLayout*>(this->layout())->setContainer(container.get());
+    qobject_cast<listLayout*>(this->layout())->update();
 }
 
 polynomContainer* listPolynom::getPolynomContainer() {

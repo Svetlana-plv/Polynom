@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1344</width>
-    <height>763</height>
+    <width>1346</width>
+    <height>768</height>
    </rect>
   </property>
   <widget class="QWidget" name="centralwidget" native="true">
@@ -64,7 +64,7 @@
       <x>0</x>
       <y>50</y>
       <width>341</width>
-      <height>711</height>
+      <height>651</height>
      </rect>
     </property>
     <property name="widgetResizable">
@@ -76,7 +76,7 @@
        <x>0</x>
        <y>0</y>
        <width>339</width>
-       <height>709</height>
+       <height>649</height>
       </rect>
      </property>
      <widget class="listPolynom" name="widgetList" native="true">
@@ -85,7 +85,7 @@
         <x>10</x>
         <y>10</y>
         <width>321</width>
-        <height>741</height>
+        <height>631</height>
        </rect>
       </property>
      </widget>
@@ -733,6 +733,16 @@
     </property>
     <property name="text">
      <string>Settings</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>710</y>
+      <width>301</width>
+      <height>41</height>
+     </rect>
     </property>
    </widget>
   </widget>

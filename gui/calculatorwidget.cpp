@@ -44,7 +44,6 @@ CalculatorWidget::CalculatorWidget(ContainerType state, QWidget* parent) : QWidg
     ui->pushButton_select->setFocusPolicy(Qt::NoFocus);
 
     container = new ContainerPolynom();
-    container->setContainer(createContainer(state));
 
     containerList = new listPolynom();
     containerList->setContainer(createContainer(state));
@@ -54,6 +53,10 @@ CalculatorWidget::CalculatorWidget(ContainerType state, QWidget* parent) : QWidg
 
     this->setStyle(QStyleFactory::create("Fusion")); 
     this->setPalette(QApplication::palette());
+
+    connect(ui->lineEdit, &QLineEdit::textChanged, this, [=](const QString& text) {
+        qobject_cast<listLayout*>(ui->scrollArea_2->widget()->layout())->updateVisibleWidgets(text);
+        });
 
 }
 
@@ -97,13 +100,13 @@ void CalculatorWidget::onPolynomRequestConnect(widgetPolynom* sender) {
 
 void CalculatorWidget::onPolynomUnrequestConnect() {
     polynom = nullptr;
-    qDebug() << "unset polynom";
 }
 
 void CalculatorWidget::on_pushButton_clicked()
 {
     auto flow = static_cast<FlowLayout*>(ui->scrollArea->widget()->layout());
     auto widgetP = new widgetPolynom();
+    widgetP->getLineEdit()->setReadOnly(false);
 
     connect(widgetP, &widgetPolynom::requestConnect, this, &CalculatorWidget::onPolynomRequestConnect);
     connect(widgetP, &widgetPolynom::unrequestConnect, this, &CalculatorWidget::onPolynomUnrequestConnect);
@@ -128,19 +131,39 @@ void CalculatorWidget::on_pushButton_calculate_clicked() {
         QWidget* widget = item->widget();
         if (widget) {
             widgetPolynom* poly = qobject_cast<widgetPolynom*>(widget);
-            if (str != "") str = str + " + ";
-            str = str + ccc->find(poly->key)->value().get_str();
+            str = str + poly->value;
 
             poly->fadeOutAndDelete(150);
         }
     }
 
-    Polynom meow(str);
 
-    ccc->insert(meow.get_str(), meow);
-    result->getLineEdit()->setText(QString::fromStdString(meow.get_str()));
-    result->key = meow.get_str();
-    qDebug() << result->getLineEdit()->maximumWidth();
+    result->value = str;
+    Polynom resPol;
+    try {
+
+        Lexer l;
+        ParserE p;
+        polishConverter pC;
+        RPNCalculator rpn;
+
+        vector<token> tokens =  l.makeTokens(str);
+        if (p.parserExp(tokens)) {
+            tokens = pC.toPolish(tokens);
+            resPol = rpn.evaluate(tokens);
+        }
+        else {
+            throw std::string("meow");
+        }
+        result->value = resPol.get_str();
+    }
+    catch (...){
+        QMessageBox::critical(this, "error", "");
+    }
+
+    result->key = result->value;
+    result->setKeyAndValue = true;
+    result->getLineEdit()->setText(QString::fromStdString(result->key));
     addWidgetAnimation(result, flow);
 }
 
@@ -202,10 +225,10 @@ void CalculatorWidget::repack(ContainerType state) {
     if (this->state == state) return;
     this->state = state;
 
-    auto newContainer = std::make_unique<ContainerPolynom>();
+    auto newContainer = std::make_unique<listPolynom>();
     newContainer->setContainer(createContainer(this->state));
 
-    auto oldCtr = container->container.get();
+    auto oldCtr = containerList->container.get();
     auto newCtr = newContainer->container.get();
     
     for (auto it = oldCtr->begin(); !(it->operator==(*oldCtr->end())); ++(*it)) {
@@ -214,7 +237,12 @@ void CalculatorWidget::repack(ContainerType state) {
         newCtr->insert(key, Polynom(value));
     }
 
-    delete container;
-    container = newContainer.release();
-    ui->scrollArea->setWidget(container);
+    delete containerList;
+    containerList = newContainer.release();
+    ui->scrollArea_2->setWidget(containerList);
+    auto layout = containerList->findChild<listLayout*>();
+    if (layout) {
+        layout->setContainer(containerList->container.get());
+        layout->updateVisibleWidgets();
+    }
 }

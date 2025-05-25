@@ -131,7 +131,6 @@ public:
 		if (index == -1) return this->end();
 		data.erase(data.begin() + index);
 		return this->begin() + index;
-		
 	}
 
 	Iterator find(const TKey& key) {

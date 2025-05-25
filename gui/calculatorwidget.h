@@ -4,12 +4,17 @@
 #include "widgetpolynom.h"
 #include "ContainerPolynom.h"
 #include "listpolynom.h"
+
+#include "polish.h"
+#include "parser.h"
+#include "lexer.h"
 #include "struct.h"
 
 #include <QWidget>
 #include <QLineEdit>
 #include <QHBoxLayout>
 #include <Qlabel>
+#include <QMessageBox>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class CalculatorWidget; }

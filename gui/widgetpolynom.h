@@ -31,8 +31,11 @@ protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 public:
+    bool setKey = false;
+    bool setKeyAndValue = true;
     std::string key;
-    Polynom* polynom;
+    std::string value;
+
     QTimer* debounceTimer = nullptr;
     QDrag* drag;
     void fadeOutAndHide(int duration = 300);
@@ -71,7 +74,6 @@ public:
     void setPinkColor();
 
     QString getPolynomStr() const;
-    void setPolynomStr(const QString& str);
 
     QString getColorHex() const;
     void setColorHex(const QColor& hexColor);
@@ -79,4 +81,5 @@ public:
 signals:
     void requestConnect(widgetPolynom* sender);
     void unrequestConnect();
+    void updateList();
 };

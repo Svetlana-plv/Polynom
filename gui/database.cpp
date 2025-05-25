@@ -31,9 +31,8 @@ bool DatabaseManager::initDatabase() {
         "CREATE TABLE IF NOT EXISTS polynomials ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "profile_id INTEGER NOT NULL, "
-        "expression TEXT, "
-        "color TEXT, "
         "key TEXT, "
+        "value TEXT, "
         "FOREIGN KEY(profile_id) REFERENCES profiles(id) ON DELETE CASCADE)"
     )) {
         qDebug() << "Ошибка создания таблицы polynomials:" << query.lastError().text();

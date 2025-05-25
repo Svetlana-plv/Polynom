@@ -36,7 +36,6 @@ void MainWindow::addNewTab() {
     tab->setMaximumSize(this->maximumSize());
     tab->setMinimumSize(this->minimumSize());
 
-
     // вставляем перед вкладкой "+"
     int plusIndex = ui->tabWidget->count() - 1;
     ui->tabWidget->insertTab(plusIndex, tab, QString("Profile %1").arg(count));
@@ -62,7 +61,7 @@ void MainWindow::saveAllToDataBase() {
     insertProfile.prepare("INSERT INTO profiles (name, state) VALUES (?, ?)");
 
     QSqlQuery insertPoly(db);
-    insertPoly.prepare("INSERT INTO polynomials (profile_id, expression, color, key) VALUES (?, ?, ?, ?)");
+    insertPoly.prepare("INSERT INTO polynomials (profile_id, key, value) VALUES (?, ?, ?)");
 
     for (int i = 0; i < ui->tabWidget->count() - 1; ++i) {
         QString profileName = ui->tabWidget->tabText(i);
@@ -87,9 +86,8 @@ void MainWindow::saveAllToDataBase() {
         QList<widgetPolynom*> polynoms = tab->getCalculator()->getListLayout()->getPolynomsFromLayout();
         for (widgetPolynom* w : polynoms) {
             insertPoly.addBindValue(profileId);
-            insertPoly.addBindValue(QString::fromStdString(ccc->find(w->key)->value().get_str()));
-            insertPoly.addBindValue(w->getColorHex());
             insertPoly.addBindValue(QString::fromStdString(w->key));
+            insertPoly.addBindValue(QString::fromStdString(ccc->find(w->key)->value().get_str()));
 
             if (!insertPoly.exec()) {
                 qDebug() << "error to add a polynom:" << insertPoly.lastError().text();
@@ -123,33 +121,27 @@ void MainWindow::loadAllFromDatabase() {
         count++;
         //tab->setObjectName(profileName);
         
-        polyQuery.prepare("SELECT expression, color, key FROM polynomials WHERE profile_id = ?");
+        polyQuery.prepare("SELECT key, value FROM polynomials WHERE profile_id = ?");
         polyQuery.addBindValue(profileId);
         if (!polyQuery.exec()) {
             qDebug() << "error query: " << polyQuery.lastError().text();
             continue;
         }
 
+        auto listL = static_cast<listLayout*>(tab->getCalculator()->getListLayout());
+        auto mew = qobject_cast<listPolynom*>(listL->parentWidget());
+        auto ccc = mew->container.get();
+
         int i = 0;
         while (polyQuery.next()) {
-            QString expr = polyQuery.value(0).toString();
-            QColor color(polyQuery.value(1).toString());
-            QString key = polyQuery.value(2).toString();
-
-            auto listL = static_cast<listLayout*>(tab->getCalculator()->getListLayout());
-            auto widgetP = new widgetPolynom(listL->parentWidget());
-            
-            widgetP->setColorHex(color);
-            widgetP->key = key.toStdString();
-            auto mew = qobject_cast<listPolynom*>(listL->parentWidget());
-            auto ccc = mew->container.get();
-            ccc->insert(key.toStdString(), expr.toStdString());
-            listL->insertWidget(i, widgetP);
-            
-            widgetP->getLineEdit()->setText(key);
-
+            QString key = polyQuery.value(0).toString();
+            QString value = polyQuery.value(1).toString();
+            ccc->insert(key.toStdString(), value.toStdString());
             i++;
         }
+
+        auto listLay = qobject_cast<listLayout*>(mew->layout());
+        listLay->updateVisibleWidgets();
 
         ui->tabWidget->insertTab(ui->tabWidget->count()-1, tab, profileName);
         ui->tabWidget->setCurrentIndex(ui->tabWidget->count() - 1);
