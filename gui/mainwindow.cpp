@@ -83,11 +83,10 @@ void MainWindow::saveAllToDataBase() {
 
         int profileId = insertProfile.lastInsertId().toInt();
 
-        QList<widgetPolynom*> polynoms = tab->getCalculator()->getListLayout()->getPolynomsFromLayout();
-        for (widgetPolynom* w : polynoms) {
+        for (auto it = ccc->begin(); it->operator!=(*ccc->end()); ++(*it)) {
             insertPoly.addBindValue(profileId);
-            insertPoly.addBindValue(QString::fromStdString(w->key));
-            insertPoly.addBindValue(QString::fromStdString(ccc->find(w->key)->value().get_str()));
+            insertPoly.addBindValue(QString::fromStdString((*it).key()));
+            insertPoly.addBindValue(QString::fromStdString((*it).value().get_str()));
 
             if (!insertPoly.exec()) {
                 qDebug() << "error to add a polynom:" << insertPoly.lastError().text();
